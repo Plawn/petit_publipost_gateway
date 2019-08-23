@@ -1,0 +1,7 @@
+{
+    "new-templates": {
+        "class_separator": "::",
+        "output_folder":"new-output",
+        "type":"mission"
+    }
+}
