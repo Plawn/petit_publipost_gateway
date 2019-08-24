@@ -14,48 +14,68 @@ it must be a json and include
 
 from flask import Flask, request, jsonify
 from app import TemplateDB, MinioCreds, MinioPath
-from typing import Dict
+from typing import Dict, Union
 import json
 import os
+import traceback
 
 TEMP_DIR = 'temp'
 
-with open(os.environ['CONF_FILE'], 'r') as f :
-    settings = json.load(f)
+conf_filename: str = os.environ['CONF_FILE']
 
-manifest_path = MinioPath(settings['SETTINGS_BUCKET'], settings['MANIFEST_FILE'])
+with open(conf_filename, 'r') as f:
+    settings: Dict[str, str] = json.load(f)
 
-creds = MinioCreds(settings['MINIO_HOST'], settings['MINIO_KEY'], settings['MINIO_PASS'])
-db = TemplateDB(manifest_path, TEMP_DIR, creds)
+manifest_path = MinioPath(
+    settings['SETTINGS_BUCKET'],
+    settings['MANIFEST_FILE'])
+
+minio_creds = MinioCreds(
+    settings['MINIO_HOST'],
+    settings['MINIO_KEY'],
+    settings['MINIO_PASS'])
+
+template_db = TemplateDB(manifest_path, TEMP_DIR, minio_creds)
 
 app = Flask(__name__)
 
-# das working
-@app.route('/get_all_documents/<_type>')
-def get_all_documents_from_type(_type: str): 
-    return jsonify(db.templators[_type].to_json())
-
-
-@app.route('/get_all')
-def get_all(): return jsonify(db.to_json())
-
 
 # das working
-@app.route('/get_fields_document/<_type>/<name>')
+@app.route('/get_all_documents/<_type>', methods=['GET'])
+def get_all_documents_from_type(_type: str):
+    return jsonify(template_db.templators[_type].to_json())
+
+
+# daw working
+@app.route('/get_all', methods=['GET'])
+def get_all():
+    return jsonify(template_db.to_json())
+
+
+# das working
+@app.route('/get_fields_document/<_type>/<name>', methods=['GET'])
 def get_fields_document(_type: str, name: str):
-    if _type in db.templators:
-        if name in db.templators[_type].templates:
-            return jsonify(db.templators[_type].templates[name].to_json())
+    # check if type exists
+    if _type in template_db.templators:
+        # check if template name exists
+        if name in template_db.templators[_type].templates:
+            return jsonify(template_db.templators[_type].templates[name].to_json())
+        return jsonify({'error': 404}), 404
     else:
         return jsonify({'error': 404}), 404
 
+
 # das working
-@app.route('/reload')
+@app.route('/reload', methods=['GET'])
 def reload_document():
-    db._init()
-    return jsonify({'error': False})
+    try:
+        template_db._init()
+        return jsonify({'error': False})
+    except:
+        return jsonify({'error': traceback.format_exc()}), 500
 
 
+# das working
 # data sould of the form :
 # {
 #   $type1 : {
@@ -69,12 +89,13 @@ def reload_document():
 # }
 @app.route('/publipost', methods=['POST'])
 def publipost_document():
-    _type = request.form['type']
-    document_name: str = request.form['document_name']
-    filename: str = request.form['filename']
-    data: Dict[str, Dict[str, str]] = json.loads(request.form['data'])
-    return jsonify({'url': db.render_template(_type, document_name, data, filename)})
+    form: Dict[str, Union[str, Dict[str, str]]] = request.get_json()
+    _type: str = form['type']
+    document_name: str = form['document_name']
+    filename: str = form['filename']
+    data: Dict[str, Dict[str, str]] = form['data']
+    return jsonify({'url': template_db.render_template(_type, document_name, data, filename)})
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0')
