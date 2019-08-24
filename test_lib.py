@@ -1,29 +1,40 @@
 from app.better_publiposting import DocxTemplate
 import json
+from app.ReplacerMiddleware import MultiReplacer, FuncReplacer, ListReplacer
 
-doc = DocxTemplate('DDE.docx', '::')
+
+m = MultiReplacer([FuncReplacer(), ListReplacer()])
+doc = DocxTemplate('DDE_table.docx', m)
+
 res = doc.to_json()
-
+# mission.contact.civility.value
 template = {
-        "mission::projectManager_student_firstName": '1jeb',
-        "mission::contact_firstName": '2jeb',
-        "mission::company_name": '3jeb',
-        "mission::contact_civility_value": 'j4eb',
-        "mission::company_address": '5jeb',
-        "mission::projectManager_student_lastName": 'jeb',
-        "mission::contact_lastName": 'je8b',
-        "mission::company_zipCode": 'je7b',
-        "mission::documentReference_p_DDE": 'j6eb',
-        "mission::projectManager_student_civility_value": 'je5b',
-        "mission::company_city": 'je6b',
-        "mission::contact_position": 'je5b',
-        "mission::projectManager_student_mail": 'je4b',
+    'mission': {
+        'contact': {
+            'civility': {
+                'value': 'JEB'
+            }
+        },
+        'documentReference(\"DDE\")': "SOME ref",
+        'nbJEH': 10,
+        # need name and price for phases
+        'phases': [
+            {'name': 'Phase1', 'price': 5},
+            {'name': 'Phase2', 'price': 3},
+            {'name': 'Phase3', 'price': 2}
+        ],
+        'accomptePerc': '30'
+    },
+    'student': {
+        'name': {
+            'value': 'Paul'
+        }
     }
+}
+
 
 templated = doc.apply_template(template)
 templated.save('res.docx')
 
 with open('res.json', 'w') as f:
     json.dump(res, f, indent=4)
-
-

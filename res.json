@@ -1,43 +1,25 @@
 {
     "mission": {
-        "contact_lastName": {
-            "traduction": ""
+        "nbJEH": {
+            "name": "{{mission.nbJEH}}",
+            "info": {
+                "tradution": ""
+            }
         },
-        "company_name": {
-            "traduction": ""
-        },
-        "projectManager_student_firstName": {
-            "traduction": ""
-        },
-        "company_address": {
-            "traduction": ""
-        },
-        "contact_civility_value": {
-            "traduction": ""
-        },
-        "documentReference_p_DDE": {
-            "traduction": ""
-        },
-        "company_city": {
-            "traduction": ""
-        },
-        "contact_firstName": {
-            "traduction": ""
-        },
-        "contact_position": {
-            "traduction": ""
-        },
-        "projectManager_student_lastName": {
-            "traduction": ""
-        },
-        "company_zipCode": {
-            "traduction": ""
-        },
-        "projectManager_student_mail": {
-            "traduction": ""
-        },
-        "projectManager_student_civility_value": {
-            "traduction": ""
+        "phases": {
+            "price": {
+                "name": "{{mission.phases.price}}"
+            },
+            "type": {
+                "list": [
+                    "name",
+                    "price"
+                ]
+            },
+            "tradution": "",
+            "name": {
+                "name": "{{mission.phases.name}}"
+            }
         }
     }
 }

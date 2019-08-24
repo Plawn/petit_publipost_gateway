@@ -16,7 +16,6 @@ WHY ? :
 
 For real tho:
 
-* Not relying on strange libraries for templating -> can template the fuck out anything
 * Will be able to make <span style="color:orange;">**TABLES**</span> !!
 * Now support types WICH MEANS that we'll soon be able to make <span style="color:orange;">REM's</span> and <span style="color:orange;">CET's</span>
 
@@ -29,13 +28,20 @@ Example
 
 ```python
  {
-    'data': json.dumps({
+    'data':  {
         'mission': {
-            'projectManager_student_firstName': 'Jack'
+            'contact': {
+                'civility': {
+                    'value': 'JEB'
+                }
+            }
         },
         'student':{
-            'name_value':'Paul'
-        }}),
+            'name':{
+                'value':'Paul'
+            }
+        }
+    },
     'template_name': 'DDE',
     'filename': 'test.docx',
     'type': 'mission'
@@ -45,14 +51,15 @@ Example
 
 data is like previous data but with types now
 
-* to render `mission::projectManager_student_firstName` you have to put it under the `mission` key
-* to render `student::name_value` you have ti put it under the `student` key
+* to render `mission.contact.civility.value` you have to put it under the `mission.contact.civility.value` key
+
+Which means that now you can just deserialize the data from the db to that api
 
 You can now render :
 
-`student::name_value`
+`student.name.value`
 
-`mission::name_value`
+`mission.name.value`
 
 without breaking a sweat
 
@@ -85,3 +92,57 @@ That's a config file telling the app where to find repositories
 It's supposed to be stored on minio too
 
 ## Check the test files for more information !
+
+
+## TODO 
+
+- Add syntax for auto-table detection -> should be handled by make model -> YAS
+
+You have to specify the loop variable name to have model_auto_creation :
+
+It could be your loop variable name : 
+
+`phasesIInameTpriceIImission`
+
+### First
+
+* phases : name of the variable you want to use
+
+
+### Second
+
+* IInameTpriceII : -> [name, price] but you replaced 
+    * [ -> II 
+    * ] -> II 
+    * , -> T
+
+It tells the compiler that you will have a list of object with the keys :
+
+* "name"
+* "price"
+
+### Third
+
+It tells the compiler to what node it is attached
+
+* mission
+
+All of this translates to :
+```json
+"phases": {
+    "name": {
+        "name": "{{mission.phases.name}}"
+    },
+    "price": {
+        "name": "{{mission.phases.price}}"
+    },
+     "type": {
+        "list": [
+            "name",
+            "price"
+        ]
+    }
+}
+```
+
+Now you only have to properly deserilyse your data

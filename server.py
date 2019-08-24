@@ -18,8 +18,14 @@ from typing import Dict, Union
 import json
 import os
 import traceback
+import shutil
 
 TEMP_DIR = 'temp'
+
+if os.path.exists(TEMP_DIR):
+    shutil.rmtree(TEMP_DIR)
+os.mkdir(TEMP_DIR)
+
 
 conf_filename: str = os.environ['CONF_FILE']
 
@@ -43,7 +49,10 @@ app = Flask(__name__)
 # das working
 @app.route('/get_all_documents/<_type>', methods=['GET'])
 def get_all_documents_from_type(_type: str):
-    return jsonify(template_db.templators[_type].to_json())
+    if _type in template_db.templators:
+        return jsonify(template_db.templators[_type].to_json())
+    else:
+        return jsonify({'error': 'Type not found'}), 404
 
 
 # daw working
@@ -60,16 +69,16 @@ def get_fields_document(_type: str, name: str):
         # check if template name exists
         if name in template_db.templators[_type].templates:
             return jsonify(template_db.templators[_type].templates[name].to_json())
-        return jsonify({'error': 404}), 404
+        return jsonify({'error': 'Template does not exists'}), 404
     else:
-        return jsonify({'error': 404}), 404
+        return jsonify({'error': 'Type not found'}), 404
 
 
 # das working
 @app.route('/reload', methods=['GET'])
 def reload_document():
     try:
-        template_db._init()
+        template_db.init()
         return jsonify({'error': False})
     except:
         return jsonify({'error': traceback.format_exc()}), 500
@@ -94,7 +103,9 @@ def publipost_document():
     document_name: str = form['document_name']
     filename: str = form['filename']
     data: Dict[str, Dict[str, str]] = form['data']
-    return jsonify({'url': template_db.render_template(_type, document_name, data, filename)})
+    return jsonify(
+        {'url': template_db.render_template(_type, document_name, data, filename)}
+    )
 
 
 if __name__ == '__main__':
