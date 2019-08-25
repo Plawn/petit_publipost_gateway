@@ -1,21 +1,26 @@
-import json
-from typing import Tuple, List, Dict
 import copy
-from collections.abc import Mapping
+import json
+from typing import Dict, List, Tuple
+
+from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME
+from ..ReplacerMiddleware import MultiReplacer
+from . import utils
+from .utils import ThisFallbackAction
 
 
-def merge_dict(d1: dict, d2: dict):
-    """
-    Modifies d1 in-place to contain values from d2.  If any value
-    in d1 is a dictionary (or dict-like), *and* the corresponding
-    value in d2 is also a dictionary, then merge them in-place.
-    """
-    for k, v2 in d2.items():
-        v1 = d1.get(k)  # returns None if v1 has no value for this key
-        if (isinstance(v1, Mapping) and isinstance(v2, Mapping)):
-            merge_dict(v1, v2)
-        else:
-            d1[k] = v2
+def bench(log_file: str) -> callable:
+    import time
+
+    def _bench(func: callable) -> callable:
+        def f(*args, **kwargs):
+            start = time.time()
+            res = func(*args, **kwargs)
+            duration = time.time() - start
+            with open(log_file, 'a') as f:
+                f.write(f'{duration}\n')
+            return res
+        return f
+    return _bench
 
 
 class Model:
@@ -26,18 +31,22 @@ class Model:
     end = '}}'
     sep = '.'
 
-    def __init__(self, strings: List[str]):
+    def __init__(self, strings: List[str], replacer: MultiReplacer):
         self.structure = None
-        self.load(strings)
+        self.replacer = replacer
+        self.fallback_action = ThisFallbackAction(
+            FIELD_NAME_OPTION, self.replacer)
 
-    def load(self, strings_and_info: List[Tuple[str, Dict[str, str]]]):
+        self.load(strings, self.replacer)
+
+    def load(self, strings_and_info: List[Tuple[str, Dict[str, str]]], replacer: MultiReplacer):
         """
         Makes a model for a given list of string like :
 
         mission.document.name => {
             mission: {
                 document: {
-                    name: "mission.document.name"
+                    name: "{{mission.document.name}}"
                 }
             }
         }
@@ -60,43 +69,37 @@ class Model:
                 if len(previous) > 0:
                     d = d[previous[-1]]
                     last_prev = previous[-1]
-                
+
                 if item not in d:
                     if i != end:
                         d[item] = {}
                     else:
                         if not 'use_prev' in infos:
                             d[item] = {
-                                'name': f'{self.start}{string}{self.end}', 'info': infos}
+                                FIELD_NAME_OPTION: f'{self.start}{replacer.to_doc(string)[0]}{self.end}',
+                                INFO_FIELD_NAME: infos}
                         else:
                             del infos['use_prev']
                             d[item] = {
-                                'name': f'{self.start}{string}{self.end}'}
-                            last_node[last_prev].update(infos)
+                                FIELD_NAME_OPTION: f'{self.start}{replacer.to_doc(string)[0]}{self.end}'}
+                            if INFO_FIELD_NAME not in last_node[last_prev]:
+                                last_node[last_prev] = {INFO_FIELD_NAME: infos}
+                            else:
+                                last_node[last_prev][INFO_FIELD_NAME].update(
+                                    infos)
                 previous.append(item)
         self.structure = res
 
-    def merge(self, _input: dict):
+    # @bench('without.csv')
+
+    def merge(self, _input: dict, ensure_keys=True) -> dict:
+        """
+        """
         d1 = copy.deepcopy(self.structure)
-        merge_dict(d1, _input)
+        utils.merge_dict(d1, _input)
+        if ensure_keys:
+            utils.ensure_keys(d1, self.fallback_action)
         return d1
 
-    def to_json(self):
+    def to_json(self) -> dict:
         return self.structure
-
-
-if __name__ == '__main__':
-    with open('file.txt', 'r') as f:
-        lines = f.readlines()
-
-    with open('merge.json', 'r') as f:
-        to_merge = json.load(f)
-
-    model = Model(line.strip() for line in lines)
-    print(to_merge)
-    s = json.dumps(model.structure, indent=4)
-    # print(s)
-    # with open('res.json', 'w') as f:
-    #     f.write(s)
-    print(model.merge(to_merge))
-    print(model.structure)

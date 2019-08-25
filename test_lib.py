@@ -1,34 +1,46 @@
-from app.better_publiposting import DocxTemplate
 import json
-from app.ReplacerMiddleware import MultiReplacer, FuncReplacer, ListReplacer
 
+from app.better_publiposting import DocxTemplate
+from app.better_publiposting.ReplacerMiddleware import (FuncReplacer,
+                                                        ListReplacer,
+                                                        MultiReplacer)
 
 m = MultiReplacer([FuncReplacer(), ListReplacer()])
-doc = DocxTemplate('DDE_table.docx', m)
+doc = DocxTemplate('DDE.docx', m)
 
 res = doc.to_json()
 # mission.contact.civility.value
 template = {
     'mission': {
-        'contact': {
-            'civility': {
-                'value': 'JEB'
+        # 'contact': {
+        #     'civility': {
+        #         'value': 'JEB'
+        #     },
+        #     # 'firstName':'Paul'
+        # },
+        'projectManager': {
+            'student': {
+                'firstName': 'Paul',
+                'lastName': 'Leveau'
             }
         },
-        'documentReference(\"DDE\")': "SOME ref",
-        'nbJEH': 10,
-        # need name and price for phases
-        'phases': [
-            {'name': 'Phase1', 'price': 5},
-            {'name': 'Phase2', 'price': 3},
-            {'name': 'Phase3', 'price': 2}
-        ],
-        'accomptePerc': '30'
-    },
-    'student': {
-        'name': {
-            'value': 'Paul'
-        }
+        #     'documentReference("DDE")': 'DAT REF',
+        #     # 'documentReference(\"DDE\")': "SOME ref",
+        #     'nbJEH': 10,
+        #     # need name and price for phases
+        #     'phases': [
+        #         {'name': 'Phase1', 'price': 5},
+        #         {'name': 'Phase2', 'price': 3},
+        #         {'name': 'Phase3', 'price': 2}
+        #     ],
+        #     'Frais': '200',
+        #     'accomptePerc': '30'
+        # },
+        # 'student': {
+        #     'name': {
+        #         'value': 'Paul'
+        #     }
+        # }
     }
 }
 

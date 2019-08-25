@@ -1,4 +1,4 @@
-from typing import Dict, List, Generator, Iterable
+from typing import Generator, Iterable
 
 
 def xml_cleaner(words: Iterable) -> Generator[str, None, None]:

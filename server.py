@@ -12,13 +12,15 @@ it must be a json and include
 """
 
 
-from flask import Flask, request, jsonify
-from app import TemplateDB, MinioCreds, MinioPath
-from typing import Dict, Union
 import json
 import os
-import traceback
 import shutil
+import traceback
+from typing import Dict, Union
+
+from flask import Flask, jsonify, request
+
+from app import MinioCreds, MinioPath, TemplateDB
 
 TEMP_DIR = 'temp'
 
@@ -46,8 +48,14 @@ template_db = TemplateDB(manifest_path, TEMP_DIR, minio_creds)
 app = Flask(__name__)
 
 
+# daw working
+@app.route('/document', methods=['GET'])
+def get_all():
+    return jsonify(template_db.to_json())
+
+
 # das working
-@app.route('/get_all_documents/<_type>', methods=['GET'])
+@app.route('/document/<_type>', methods=['GET'])
 def get_all_documents_from_type(_type: str):
     if _type in template_db.templators:
         return jsonify(template_db.templators[_type].to_json())
@@ -55,14 +63,8 @@ def get_all_documents_from_type(_type: str):
         return jsonify({'error': 'Type not found'}), 404
 
 
-# daw working
-@app.route('/get_all', methods=['GET'])
-def get_all():
-    return jsonify(template_db.to_json())
-
-
 # das working
-@app.route('/get_fields_document/<_type>/<name>', methods=['GET'])
+@app.route('/document/<_type>/<name>', methods=['GET'])
 def get_fields_document(_type: str, name: str):
     # check if type exists
     if _type in template_db.templators:
@@ -104,9 +106,10 @@ def publipost_document():
     filename: str = form['filename']
     data: Dict[str, Dict[str, str]] = form['data']
     return jsonify(
-        {'url': template_db.render_template(_type, document_name, data, filename)}
+        {'url': template_db.render_template(
+            _type, document_name, data, filename)}
     )
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', debug=True)

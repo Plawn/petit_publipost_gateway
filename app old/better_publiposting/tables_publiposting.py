@@ -5,9 +5,9 @@ from .docx_template import TableData
 import copy
 
 def render_table(table: Table, data:TableData):
-    print(data.title)
+    # print(data.title)
     base_style = table.rows[0].cells[0].paragraphs[0].style.paragraph_format
-    print(dir(base_style))
+    # print(dir(base_style))
     for row in data.rows:
         _row = table.add_row()
         for cell, d in zip(_row.cells, row):

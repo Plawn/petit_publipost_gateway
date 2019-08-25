@@ -1,18 +1,17 @@
-from . import utils
-from lxml import etree
+import copy
+import re
+from typing import Dict, Generator, Set, Union
+
 import docx
 from docxtpl import DocxTemplate as _docxTemplate
-import re
-from typing import Dict, Set, Generator, Union
-import copy
+from lxml import etree
+
+from .ReplacerMiddleware import MultiReplacer
+from . import utils
 from .model_handler import Model
-from ..ReplacerMiddleware import MultiReplacer
+import json
 
-#     def __getattr__(self, name):
-# return getattr(self.docx, name)
-
-
-def change_keys(obj, convert):
+def change_keys(obj: dict, convert: callable)->dict:
     """
     Recursively goes through the dictionary obj and replaces keys with the convert function.
     """
@@ -21,7 +20,7 @@ def change_keys(obj, convert):
     if isinstance(obj, dict):
         new = obj.__class__()
         for k, v in obj.items():
-            new[convert(k)[0]] = change_keys(v, convert)
+            new[convert(k)] = change_keys(v, convert)
     elif isinstance(obj, (list, set, tuple)):
         new = obj.__class__(change_keys(v, convert) for v in obj)
     else:
@@ -45,8 +44,10 @@ class docxTemplate(_docxTemplate):
 
 
 # placeholder for now
-def add_infos(_dict: dict):
-    _dict.update({'tradution': ''})
+def add_infos(_dict: dict) -> None:
+    """Will add infos to the field on the fly
+    """
+    _dict.update({'traduction': ''})
 
 
 class DocxTemplate:
@@ -62,9 +63,7 @@ class DocxTemplate:
         self.replacer = replacer
         self.init()
 
-    def __load_fields(self):
-        # xml = etree.tostring(
-        #     self.doc.get_xml() , encoding='unicode', pretty_print=False)
+    def __load_fields(self) -> None:
         fields: Set[str] = set(re.findall(
             r"\{{(.*?)\}}", self.doc.get_xml(), re.MULTILINE))
         cleaned = list()
@@ -72,15 +71,15 @@ class DocxTemplate:
             field, additional_infos = self.replacer.from_doc(field)
             add_infos(additional_infos)
             cleaned.append((field.strip(), additional_infos))
-        self.model = Model(cleaned)
+        self.model = Model(cleaned, self.replacer)
 
-    def init(self, filename=''):
+    def init(self, filename='') -> None:
         """Loads the document from the filename and inits it's values
         """
         self.doc = docxTemplate(filename if filename != '' else self.filename)
         self.__load_fields()
 
-    def to_json(self):
+    def to_json(self) -> dict:
         # return {
         #     name:
         #         {field.name: field.to_json() for field in fields}
@@ -93,10 +92,12 @@ class DocxTemplate:
         doc = copy.copy(self.doc.docx)
         renderer = docxTemplate()
         renderer.docx = doc
+        
+        data = self.model.merge(data)
         data = self.re_transform(data)
-        merged = self.model.merge(data)
-        renderer.render(merged)
+        
+        renderer.render(data)
         return doc
 
     def re_transform(self, data: dict):
-        return change_keys(data, self.replacer.to_doc)
+        return change_keys(data, lambda x: self.replacer.to_doc(x)[0])

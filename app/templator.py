@@ -1,11 +1,15 @@
-import minio
-import os
-from .better_publiposting import DocxTemplate
-from typing import Dict
-import shutil
-from .minio_creds import MinioPath
 import datetime
-from .ReplacerMiddleware import MultiReplacer
+import os
+import shutil
+from typing import Dict
+
+import minio
+
+from .better_publiposting import DocxTemplate
+from .better_publiposting.ReplacerMiddleware import MultiReplacer
+from .minio_creds import MinioPath
+
+TEMP_FOLDER = 'temp'
 
 
 def from_filename(filename: str) -> str:
@@ -36,7 +40,7 @@ class Templator:
         if os.path.exists(self.local_template_directory):
             shutil.rmtree(self.local_template_directory)
         os.mkdir(self.local_template_directory)
-        os.mkdir(os.path.join(self.local_template_directory, 'temp'))
+        os.mkdir(os.path.join(self.local_template_directory, TEMP_FOLDER))
 
     def pull_templates(self):
         """Downloading and caching all templates from Minio
@@ -66,9 +70,10 @@ class Templator:
 
         doc = self.templates[template_name].apply_template(data)
         save_path = os.path.join(
-            self.local_template_directory, 'temp', output_name)
+            self.local_template_directory, TEMP_FOLDER, output_name)
 
         # if we could stream the resulting file it would be even better
+        # -> wouldn't have to save the file to the disk and then to read it again to push it to minio
         doc.save(save_path)
         self.minio_instance.fput_object(
             self.output_folder, output_name, save_path)

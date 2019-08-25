@@ -6,10 +6,11 @@ from typing import Dict
 import minio
 
 from .better_publiposting import DocxTemplate
+from .better_publiposting.ReplacerMiddleware import (FuncReplacer,
+                                                     ListReplacer,
+                                                     MultiReplacer)
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
-from .ReplacerMiddleware import FuncReplacer, MultiReplacer, ListReplacer
-
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
@@ -37,6 +38,7 @@ BASE_REPLACER = MultiReplacer(
 class TemplateDB:
     """Holds everything to publipost all types of templates
     """
+
     def __init__(self, manifest_path: MinioPath, temp_folder: str, minio_creds: MinioCreds):
         self.minio_creds = minio_creds
         self.minio_instance = minio.Minio(
@@ -70,7 +72,7 @@ class TemplateDB:
         # see manifest definition
         for bucket_name, settings in self.manifest.items():
             self.templators[settings['type']] = Templator(
-                self.minio_instance, self.temp_folder, MinioPath(bucket_name), settings['output_folder'], timedelta, BASE_REPLACER)
+                self.minio_instance, self.temp_folder, MinioPath(bucket_name), settings['output_folder'], TIME_DELTA, BASE_REPLACER)
 
     def to_json(self):
         return {

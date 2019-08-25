@@ -1,6 +1,7 @@
 from .BaseReplacer import BaseReplacer
 import re
 
+
 class ListReplacer(BaseReplacer):
     # I and T are used to delimit our stuff
     regex = re.compile(r'II(.*)II')
@@ -13,9 +14,11 @@ class ListReplacer(BaseReplacer):
             text = re.sub(self.regex, '.', text).replace(
                 '.'+pre_node, '').strip()
             text = '.'.join([nodes[0], text, '.'.join(nodes[1:])])
-            return text, {'type':
-                          {'list': res[0].split('T')},
-                          'use_prev': True}
+            infos = {'type': {
+                'list': res[0].split('T')},
+                'use_prev': True
+            }
+            return text, infos
         return text, {}
 
     def to_doc(self, text: str) -> str:
