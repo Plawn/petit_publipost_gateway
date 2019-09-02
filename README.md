@@ -2,7 +2,7 @@
 
 ## Summary
 
-Better but /!\ doesn't support **Shapes** /!\ 
+Better
 
 ---
 
