@@ -71,9 +71,12 @@ class TemplateDB:
     def __init_templators(self):
         # see manifest definition
         for bucket_name, settings in self.manifest.items():
-            self.templators[settings['type']] = Templator(
-                self.minio_instance, self.temp_folder, MinioPath(bucket_name), settings['output_folder'], TIME_DELTA, BASE_REPLACER)
+            try :
 
+                self.templators[settings['type']] = Templator(
+                    self.minio_instance, self.temp_folder, MinioPath(bucket_name), settings['output_folder'], TIME_DELTA, BASE_REPLACER)
+            except Exception as e:
+                print(e)
     def to_json(self):
         return {
             name: templator.to_json() for name, templator in self.templators.items()
