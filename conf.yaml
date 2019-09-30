@@ -1,0 +1,14 @@
+
+
+# should be imported from the minio creds conf file
+
+MINIO_HOST: documents.juniorisep.com
+MINIO_KEY: adminadmin
+MINIO_PASS: adminadmin
+
+manifest:
+    new-templates:
+        # output bucket
+        output_bucket: new-output
+        # thats the name under which the document will be set
+        type: mission

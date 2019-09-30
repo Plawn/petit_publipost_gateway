@@ -2,7 +2,7 @@ import datetime
 import os
 import shutil
 from typing import Dict
-
+import uuid
 import minio
 
 from .better_publiposting import DocxTemplate
@@ -27,11 +27,11 @@ class Templator:
     """
 
     def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
-                 output_folder: str, time_delta: datetime.timedelta, replacer: MultiReplacer):
+                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer):
         self.remote_template_directory = minio_path.bucket
         self.local_template_directory = os.path.join(
             temp_dir, self.remote_template_directory)
-        self.output_folder = output_folder
+        self.output_path = output_path
         self.templates: Dict[str, DocxTemplate] = {}
         self.minio_instance = minio_instance
         self.time_delta = time_delta
@@ -67,18 +67,18 @@ class Templator:
         }
 
     def render(self, template_name: str, data: Dict[str, str], output_name: str) -> str:
-
+        output_name = os.path.join(self.output_path.filename, output_name)
         doc = self.templates[template_name].apply_template(data)
         save_path = os.path.join(
-            self.local_template_directory, TEMP_FOLDER, output_name)
-
+            self.local_template_directory, TEMP_FOLDER, str(uuid.uuid4()))
+        
         # if we could stream the resulting file it would be even better
         # -> wouldn't have to save the file to the disk and then to read it again to push it to minio
         doc.save(save_path)
         self.minio_instance.fput_object(
-            self.output_folder, output_name, save_path)
+            self.output_path.bucket, output_name, save_path)
         os.remove(save_path)
         return self.minio_instance.presigned_get_object(
-            self.output_folder,
+            self.output_path.bucket,
             output_name,
             expires=self.time_delta)

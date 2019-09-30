@@ -11,7 +11,7 @@ it must be a json and include
 }
 """
 
-
+import yaml
 import json
 import os
 import shutil
@@ -23,6 +23,7 @@ from flask import Flask, jsonify, request
 from app import MinioCreds, MinioPath, TemplateDB
 
 TEMP_DIR = 'temp'
+MANIFEST_TOKEN = 'manifest'
 
 if os.path.exists(TEMP_DIR):
     shutil.rmtree(TEMP_DIR)
@@ -32,18 +33,16 @@ os.mkdir(TEMP_DIR)
 conf_filename: str = os.environ['CONF_FILE']
 
 with open(conf_filename, 'r') as f:
-    settings: Dict[str, str] = json.load(f)
+    settings: Dict[str, str] = yaml.load(f)
 
-manifest_path = MinioPath(
-    settings['SETTINGS_BUCKET'],
-    settings['MANIFEST_FILE'])
+manifest = settings[MANIFEST_TOKEN]
 
 minio_creds = MinioCreds(
     settings['MINIO_HOST'],
     settings['MINIO_KEY'],
     settings['MINIO_PASS'])
 
-template_db = TemplateDB(manifest_path, TEMP_DIR, minio_creds)
+template_db = TemplateDB(manifest, TEMP_DIR, minio_creds)
 
 app = Flask(__name__)
 
@@ -105,10 +104,9 @@ def publipost_document():
     document_name: str = form['document_name']
     filename: str = form['filename']
     data: Dict[str, Dict[str, str]] = form['data']
-    return jsonify(
-        {'url': template_db.render_template(
-            _type, document_name, data, filename)}
-    )
+    return jsonify({
+            'url': template_db.render_template(_type, document_name, data, filename)
+        })
 
 
 if __name__ == '__main__':

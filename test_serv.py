@@ -2,7 +2,7 @@ import json
 
 import requests
 
-url = 'http://localhost:5000'
+url = 'http://localhost:5001'
 
 data = {
     'data': {
@@ -12,11 +12,12 @@ data = {
                     'firstName': 'Paul',
                     'lastName': 'Leveau'
                 }
-            }
+            },
+            "documentReference(\"DDE\")":"DAT REF"
         }
     },
     'document_name': 'DDE',
-    'filename': 'test.docx',
+    'filename': 'jeb/test.docx',
     'type': 'mission'
 }
 
