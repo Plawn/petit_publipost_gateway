@@ -86,10 +86,11 @@ Das some phoenix-front + phoenix-back stuff
 
 
 
-## `manifest.json`
+## `manifest`
 
-That's a config file telling the app where to find repositories
-It's supposed to be stored on minio too
+That's a config telling the app where to find repositories
+It's supposed to be stored inside the conf file
+
 
 ## Check the test files for more information !
 
@@ -99,50 +100,3 @@ It's supposed to be stored on minio too
 - Add syntax for auto-table detection -> should be handled by make model -> YAS
 
 You have to specify the loop variable name to have model_auto_creation :
-
-It could be your loop variable name : 
-
-`phasesIInameTpriceIImission`
-
-### First
-
-* phases : name of the variable you want to use
-
-
-### Second
-
-* IInameTpriceII : -> [name, price] but you replaced 
-    * [ -> II 
-    * ] -> II 
-    * , -> T
-
-It tells the compiler that you will have a list of object with the keys :
-
-* "name"
-* "price"
-
-### Third
-
-It tells the compiler to what node it is attached
-
-* mission
-
-All of this translates to :
-```json
-"phases": {
-    "name": {
-        "name": "{{mission.phases.name}}"
-    },
-    "price": {
-        "name": "{{mission.phases.price}}"
-    },
-     "type": {
-        "list": [
-            "name",
-            "price"
-        ]
-    }
-}
-```
-
-Now you only have to properly deserilyse your data
