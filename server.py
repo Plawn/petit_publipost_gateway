@@ -7,8 +7,11 @@ MINIO_HOST": "<host>"
 MINIO_KEY": "<>"
 MINIO_PASS": "<>"
 manifest: 
-    <bucket_name> :
-        options
+    <template_bucket_name>:
+        # output bucket         
+        <output_bucket>: new-output         
+        # thats the name under which the document will be usable         
+        type: mission
 
 """
 
