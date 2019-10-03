@@ -2,8 +2,8 @@ import copy
 import json
 from typing import Dict, List, Tuple
 
-from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
-from ..ReplacerMiddleware import MultiReplacer
+from ...constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
+from ...ReplacerMiddleware import MultiReplacer
 from . import utils
 from .utils import ThisFallbackAction
 

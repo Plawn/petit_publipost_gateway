@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import List
 
-from ..ReplacerMiddleware import MultiReplacer
+from ...ReplacerMiddleware import MultiReplacer
 
 
 class FallbackAction:

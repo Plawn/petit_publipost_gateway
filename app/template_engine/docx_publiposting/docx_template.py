@@ -6,7 +6,7 @@ import docx
 from docxtpl import DocxTemplate as _docxTemplate
 from lxml import etree
 
-from .ReplacerMiddleware import MultiReplacer
+from ..ReplacerMiddleware import MultiReplacer
 from . import utils
 from .model_handler import Model
 import json

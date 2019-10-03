@@ -5,10 +5,8 @@ from typing import Dict
 
 import minio
 
-from .better_publiposting import DocxTemplate
-from .better_publiposting.ReplacerMiddleware import (FuncReplacer,
-                                                     ListReplacer,
-                                                     MultiReplacer)
+from .template_engine.ReplacerMiddleware import (FuncReplacer,
+                                                 MultiReplacer)
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
 
