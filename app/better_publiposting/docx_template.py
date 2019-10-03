@@ -80,11 +80,6 @@ class DocxTemplate:
         self.__load_fields()
 
     def to_json(self) -> dict:
-        # return {
-        #     name:
-        #         {field.name: field.to_json() for field in fields}
-        #     for name, fields in self.fields.items()
-        # }
         return self.model.structure
 
     def apply_template(self, data: Dict[str, str]) -> docxTemplate:
@@ -100,4 +95,4 @@ class DocxTemplate:
         return doc
 
     def re_transform(self, data: dict):
-        return change_keys(data, lambda x: self.replacer.to_doc(x)[0])
+        return change_keys(data, self.replacer.to_doc)

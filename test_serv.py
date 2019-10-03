@@ -2,7 +2,7 @@ import json
 
 import requests
 
-url = 'http://localhost:5001'
+url = 'http://localhost:5000'
 
 data = {
     'data': {

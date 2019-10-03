@@ -19,7 +19,7 @@ class ThisFallbackAction(FallbackAction):
         self.replacer = replacer
 
     def prepare_fallback(self, _dict: dict, key: str) -> None:
-        new_key, _ = self.replacer.to_doc(key)
+        new_key = self.replacer.to_doc(key)
         _dict[new_key] = _dict[key][self.field_name]
         if key != new_key:
             del _dict[key]

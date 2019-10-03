@@ -16,17 +16,6 @@ from .templator import Templator
 TIME_DELTA = timedelta(days=1)
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
-# Struct of manifest
-# Minimal configuration :
-# {
-#     "<bucket_template_name>": {
-#         "class_separator": "::",
-#         "output_folder":"new-output",
-#         "type":"mission"
-#     },
-#    ...
-# }
-
 # placeholder for now
 BASE_REPLACER = MultiReplacer(
     [
