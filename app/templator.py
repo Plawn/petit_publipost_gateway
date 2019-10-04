@@ -5,13 +5,15 @@ from typing import Dict
 import uuid
 import minio
 from typing import Tuple
-
+import Fancy_term as term
 from .template_engine import template_engines, TemplateEngine
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .minio_creds import MinioPath
 
 TEMP_FOLDER = 'temp'
 
+success_printer = term.Smart_print(term.Style(color=term.colors.green, substyles=[term.substyles.bold]))
+error_printer = term.Smart_print(term.Style(color=term.colors.red, substyles=[term.substyles.bold]))
 
 def from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
@@ -38,15 +40,26 @@ class Templator:
         self.minio_instance = minio_instance
         self.time_delta = time_delta
         self.replacer = replacer
+        
+        # placeholder
+        self.verbose = True
+        
+        self.__init_cache()
+
+    def __init_cache(self):
         # removing cache on startup
         if os.path.exists(self.local_template_directory):
             shutil.rmtree(self.local_template_directory)
         os.mkdir(self.local_template_directory)
         os.mkdir(os.path.join(self.local_template_directory, TEMP_FOLDER))
 
+
     def pull_templates(self):
         """Downloading and caching all templates from Minio
         """
+        if self.verbose :
+            print(f'Importing template from bucket "{self.remote_template_directory}"')
+        
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
             self.remote_template_directory))
         for filename in filenames:
@@ -57,12 +70,15 @@ class Templator:
                     for d in doc.stream(32*1024):
                         file_data.write(d)
                 name, ext = from_filename(filename)
-                self.templates[name] = template_engines[ext](
+                templator = template_engines[ext](
                     os.path.join(self.local_template_directory, filename), self.replacer)
+                self.templates[name] = templator
+                if self.verbose :
+                    success_printer(f'\t- Successfully imported {name} using {templator}')
             except Exception as err:
-                import traceback
-                traceback.print_exc()
-                print(err)
+                # import traceback
+                # traceback.print_exc()
+                error_printer(f'\tError importing {name} from {self.remote_template_directory} | {err}')
 
     def to_json(self):
         return {

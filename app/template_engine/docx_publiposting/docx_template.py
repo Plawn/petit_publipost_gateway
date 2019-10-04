@@ -2,30 +2,15 @@ import copy
 import re
 from typing import Dict, Generator, Set, Union
 
-import docx
 from docxtpl import DocxTemplate as _docxTemplate
-from lxml import etree
 
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
+from ..base_template_engine import TemplateEngine
 from .model_handler import Model
 import json
+import docx
 
-def change_keys(obj: dict, convert: callable)->dict:
-    """
-    Recursively goes through the dictionary obj and replaces keys with the convert function.
-    """
-    if isinstance(obj, (str, int, float)):
-        return obj
-    if isinstance(obj, dict):
-        new = obj.__class__()
-        for k, v in obj.items():
-            new[convert(k)] = change_keys(v, convert)
-    elif isinstance(obj, (list, set, tuple)):
-        new = obj.__class__(change_keys(v, convert) for v in obj)
-    else:
-        return obj
-    return new
 
 
 class docxTemplate(_docxTemplate):
@@ -50,7 +35,7 @@ def add_infos(_dict: dict) -> None:
     _dict.update({'traduction': ''})
 
 
-class DocxTemplate:
+class DocxTemplator(TemplateEngine):
     """
     """
     class_separator = '.'
@@ -62,6 +47,10 @@ class DocxTemplate:
         self.model: Model = None
         self.replacer = replacer
         self.init()
+
+    def __repr__(self):
+        return '<DocxTemplator>'
+
 
     def __load_fields(self) -> None:
         fields: Set[str] = set(re.findall(
@@ -95,4 +84,7 @@ class DocxTemplate:
         return doc
 
     def re_transform(self, data: dict):
-        return change_keys(data, self.replacer.to_doc)
+        return utils.change_keys(data, self.replacer.to_doc)
+
+
+    
