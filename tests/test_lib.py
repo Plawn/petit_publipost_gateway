@@ -1,3 +1,7 @@
+
+
+raise DeprecationWarning("This test file is deprecated")
+
 import json
 
 from app.better_publiposting import DocxTemplate

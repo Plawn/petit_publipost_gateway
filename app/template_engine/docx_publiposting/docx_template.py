@@ -72,10 +72,16 @@ class DocxTemplator(TemplateEngine):
         return self.model.structure
 
     def apply_template(self, data: Dict[str, str]) -> docxTemplate:
+        """
+        Applies the data to the template and returns a `Template`
+        """
+        
         # kinda ugly i know
+        # avoid re reading the file from the disk as we already cached it
         doc = copy.copy(self.doc.docx)
         renderer = docxTemplate()
         renderer.docx = doc
+        # here we restore the content of the docx inside the new renderer
         
         data = self.model.merge(data)
         data = self.re_transform(data)
