@@ -2,25 +2,10 @@ import copy
 import json
 from typing import Dict, List, Tuple
 
-from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME
-from ..ReplacerMiddleware import MultiReplacer
+from ...constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
+from ...ReplacerMiddleware import MultiReplacer
 from . import utils
 from .utils import ThisFallbackAction
-
-
-def bench(log_file: str) -> callable:
-    import time
-
-    def _bench(func: callable) -> callable:
-        def f(*args, **kwargs):
-            start = time.time()
-            res = func(*args, **kwargs)
-            duration = time.time() - start
-            with open(log_file, 'a') as f:
-                f.write(f'{duration}\n')
-            return res
-        return f
-    return _bench
 
 
 class Model:
@@ -74,14 +59,15 @@ class Model:
                     if i != end:
                         d[item] = {}
                     else:
-                        if not 'use_prev' in infos:
+                        if not PREV_TOKEN in infos:
                             d[item] = {
-                                FIELD_NAME_OPTION: f'{self.start}{replacer.to_doc(string)[0]}{self.end}',
-                                INFO_FIELD_NAME: infos}
+                                FIELD_NAME_OPTION: f'{self.start}{replacer.to_doc(string)}{self.end}',
+                                INFO_FIELD_NAME: infos
+                            }
                         else:
-                            del infos['use_prev']
+                            del infos[PREV_TOKEN]
                             d[item] = {
-                                FIELD_NAME_OPTION: f'{self.start}{replacer.to_doc(string)[0]}{self.end}'}
+                                FIELD_NAME_OPTION: f'{self.start}{replacer.to_doc(string)}{self.end}'}
                             if INFO_FIELD_NAME not in last_node[last_prev]:
                                 last_node[last_prev] = {INFO_FIELD_NAME: infos}
                             else:
@@ -89,8 +75,6 @@ class Model:
                                     infos)
                 previous.append(item)
         self.structure = res
-
-    # @bench('without.csv')
 
     def merge(self, _input: dict, ensure_keys=True) -> dict:
         """

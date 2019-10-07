@@ -1,0 +1,1 @@
+CONF_FILE=conf.yaml python3 server.py

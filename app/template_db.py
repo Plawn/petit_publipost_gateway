@@ -5,27 +5,14 @@ from typing import Dict
 
 import minio
 
-from .better_publiposting import DocxTemplate
-from .better_publiposting.ReplacerMiddleware import (FuncReplacer,
-                                                     ListReplacer,
-                                                     MultiReplacer)
+from .template_engine.ReplacerMiddleware import (FuncReplacer,
+                                                 MultiReplacer)
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
-
-# Struct of manifest
-# Minimal configuration :
-# {
-#     "<bucket_template_name>": {
-#         "class_separator": "::",
-#         "output_folder":"new-output",
-#         "type":"mission"
-#     },
-#    ...
-# }
 
 # placeholder for now
 BASE_REPLACER = MultiReplacer(

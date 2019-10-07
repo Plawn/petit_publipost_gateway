@@ -5,8 +5,10 @@ Will Handle on the fly conversions
 from typing import Tuple, List
 from .BaseReplacer import BaseReplacer
 from .FuncReplacer import FuncReplacer
+
+# kinda useless right now
 from .ListReplacer import ListReplacer
-# Not really performant for now
+
 
 
 class MultiReplacer:
@@ -20,9 +22,7 @@ class MultiReplacer:
             res.update(addtional_infos)
         return text, res
 
-    def to_doc(self, text: str)-> Tuple[str, dict]:
-        res = {}
+    def to_doc(self, text: str) -> str:
         for replacer in self.replacers:
-            text, addtional_infos = replacer.to_doc(text)
-            res.update(addtional_infos)
-        return text, res
+            text = replacer.to_doc(text)
+        return text

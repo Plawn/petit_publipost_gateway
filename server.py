@@ -1,14 +1,18 @@
 """Main app for api-doc 
 REQUIRES CONF_FILE to be set to the configuration file
-it must be a json and include
+it must be a yaml and include
 
-{
-    "MINIO_HOST":"<host>",
-    "MINIO_KEY":"<>",
-    "MINIO_PASS":"<>",
-    "SETTINGS_BUCKET":"<>",
-    "MANIFEST_FILE":"<>"
-}
+
+MINIO_HOST": "<host>"
+MINIO_KEY": "<>"
+MINIO_PASS": "<>"
+manifest: 
+    <template_bucket_name>:
+        # output bucket         
+        <output_bucket>: new-output         
+        # thats the name under which the document will be usable         
+        type: mission
+
 """
 
 import yaml

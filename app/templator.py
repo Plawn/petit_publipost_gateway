@@ -4,16 +4,20 @@ import shutil
 from typing import Dict
 import uuid
 import minio
-
-from .better_publiposting import DocxTemplate
-from .better_publiposting.ReplacerMiddleware import MultiReplacer
+from typing import Tuple
+import Fancy_term as term
+from .template_engine import template_engines, TemplateEngine
+from .template_engine.ReplacerMiddleware import MultiReplacer
 from .minio_creds import MinioPath
 
 TEMP_FOLDER = 'temp'
 
+success_printer = term.Smart_print(term.Style(color=term.colors.green, substyles=[term.substyles.bold]))
+error_printer = term.Smart_print(term.Style(color=term.colors.red, substyles=[term.substyles.bold]))
 
-def from_filename(filename: str) -> str:
-    return filename.split('.')[0]
+def from_filename(filename: str) -> Tuple[str, str]:
+    *name, ext = filename.split('.')
+    return '.'.join(name), ext
 
 
 class Templator:
@@ -32,19 +36,30 @@ class Templator:
         self.local_template_directory = os.path.join(
             temp_dir, self.remote_template_directory)
         self.output_path = output_path
-        self.templates: Dict[str, DocxTemplate] = {}
+        self.templates: Dict[str, TemplateEngine] = {}
         self.minio_instance = minio_instance
         self.time_delta = time_delta
         self.replacer = replacer
+        
+        # placeholder
+        self.verbose = True
+        
+        self.__init_cache()
+
+    def __init_cache(self):
         # removing cache on startup
         if os.path.exists(self.local_template_directory):
             shutil.rmtree(self.local_template_directory)
         os.mkdir(self.local_template_directory)
         os.mkdir(os.path.join(self.local_template_directory, TEMP_FOLDER))
 
+
     def pull_templates(self):
         """Downloading and caching all templates from Minio
         """
+        if self.verbose :
+            print(f'Importing template from bucket "{self.remote_template_directory}"')
+        
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
             self.remote_template_directory))
         for filename in filenames:
@@ -54,12 +69,16 @@ class Templator:
                 with open(os.path.join(self.local_template_directory, filename), 'wb') as file_data:
                     for d in doc.stream(32*1024):
                         file_data.write(d)
-                self.templates[from_filename(filename)] = DocxTemplate(
+                name, ext = from_filename(filename)
+                templator = template_engines[ext](
                     os.path.join(self.local_template_directory, filename), self.replacer)
+                self.templates[name] = templator
+                if self.verbose :
+                    success_printer(f'\t- Successfully imported {name} using {templator}')
             except Exception as err:
                 # import traceback
                 # traceback.print_exc()
-                print(err)
+                error_printer(f'\tError importing {name} from {self.remote_template_directory} | {err}')
 
     def to_json(self):
         return {
@@ -71,7 +90,7 @@ class Templator:
         doc = self.templates[template_name].apply_template(data)
         save_path = os.path.join(
             self.local_template_directory, TEMP_FOLDER, str(uuid.uuid4()))
-        
+
         # if we could stream the resulting file it would be even better
         # -> wouldn't have to save the file to the disk and then to read it again to push it to minio
         doc.save(save_path)

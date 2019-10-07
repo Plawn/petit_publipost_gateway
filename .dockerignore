@@ -1,0 +1,7 @@
+temp
+tests
+*.sh
+*README*
+.gitlab-ci.yml
+*.env
+docker-compose.yaml

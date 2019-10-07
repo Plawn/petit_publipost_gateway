@@ -1,4 +1,5 @@
 from .BaseReplacer import BaseReplacer
+from ..constants import PREV_TOKEN
 import re
 
 
@@ -16,10 +17,10 @@ class ListReplacer(BaseReplacer):
             text = '.'.join([nodes[0], text, '.'.join(nodes[1:])])
             infos = {'type': {
                 'list': res[0].split('T')},
-                'use_prev': True
+                PREV_TOKEN: True
             }
             return text, infos
         return text, {}
 
     def to_doc(self, text: str) -> str:
-        return text, {}
+        return text
