@@ -87,13 +87,10 @@ class Templator:
 
     def render(self, template_name: str, data: Dict[str, str], output_name: str) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
-        doc = self.templates[template_name].apply_template(data)
         save_path = os.path.join(
             self.local_template_directory, TEMP_FOLDER, str(uuid.uuid4()))
+        doc = self.templates[template_name].render_to(data, save_path)
 
-        # if we could stream the resulting file it would be even better
-        # -> wouldn't have to save the file to the disk and then to read it again to push it to minio
-        doc.save(save_path)
         self.minio_instance.fput_object(
             self.output_path.bucket, output_name, save_path)
         os.remove(save_path)

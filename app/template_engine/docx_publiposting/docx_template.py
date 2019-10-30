@@ -1,31 +1,27 @@
 import copy
+import json
 import re
 from typing import Dict, Generator, Set, Union
 
+import docx
 from docxtpl import DocxTemplate as _docxTemplate
 
+from ..base_template_engine import TemplateEngine
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
-from ..base_template_engine import TemplateEngine
 from .model_handler import Model
-import json
-import docx
-
 
 
 class docxTemplate(_docxTemplate):
     """Proxying the real class in order to be able to copy.copy the template docx file
     """
 
-    def __init__(self, filename: str = ''):
+    def __init__(self, filename: str = '', document=None):
         self.crc_to_new_media = {}
         self.crc_to_new_embedded = {}
         self.pic_to_replace = {}
         self.pic_map = {}
-        if filename != '':
-            self.docx = docx.Document(filename)
-        else:
-            self.docx = None
+        self.docx = document if document is not None else docx.Document(filename)
 
 
 # placeholder for now
@@ -51,7 +47,6 @@ class DocxTemplator(TemplateEngine):
     def __repr__(self):
         return '<DocxTemplator>'
 
-
     def __load_fields(self) -> None:
         fields: Set[str] = set(re.findall(
             r"\{{(.*?)\}}", self.doc.get_xml(), re.MULTILINE))
@@ -75,22 +70,22 @@ class DocxTemplator(TemplateEngine):
         """
         Applies the data to the template and returns a `Template`
         """
-        
+
         # kinda ugly i know
         # avoid re reading the file from the disk as we already cached it
         doc = copy.copy(self.doc.docx)
-        renderer = docxTemplate()
-        renderer.docx = doc
+        renderer = docxTemplate(document=doc)
         # here we restore the content of the docx inside the new renderer
-        
+
         data = self.model.merge(data)
         data = self.re_transform(data)
-        
+
         renderer.render(data)
         return doc
 
     def re_transform(self, data: dict):
         return utils.change_keys(data, self.replacer.to_doc)
 
-
-    
+    def render_to(self, data: Dict[str, str], filename: str) -> None:
+        doc = self.apply_template(data)
+        doc.save(filename)
