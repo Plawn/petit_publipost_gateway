@@ -25,7 +25,11 @@ from typing import Dict, Union
 from flask import Flask, jsonify, request
 
 from app import MinioCreds, MinioPath, TemplateDB
+from datetime import timedelta
 
+
+# should be env or config variable
+TIME_DELTA = timedelta(days=1)
 TEMP_DIR = 'temp'
 MANIFEST_TOKEN = 'manifest'
 
@@ -37,7 +41,7 @@ os.mkdir(TEMP_DIR)
 conf_filename: str = os.environ['CONF_FILE']
 
 with open(conf_filename, 'r') as f:
-    settings: Dict[str, str] = yaml.load(f)
+    settings: Dict[str, object] = yaml.load(f)
 
 manifest = settings[MANIFEST_TOKEN]
 
@@ -46,7 +50,7 @@ minio_creds = MinioCreds(
     settings['MINIO_KEY'],
     settings['MINIO_PASS'])
 
-template_db = TemplateDB(manifest, TEMP_DIR, minio_creds)
+template_db = TemplateDB(manifest, TIME_DELTA, TEMP_DIR, minio_creds)
 
 app = Flask(__name__)
 
@@ -109,8 +113,8 @@ def publipost_document():
     filename: str = form['filename']
     data: Dict[str, Dict[str, str]] = form['data']
     return jsonify({
-            'url': template_db.render_template(_type, document_name, data, filename)
-        })
+        'url': template_db.render_template(_type, document_name, data, filename)
+    })
 
 
 if __name__ == '__main__':

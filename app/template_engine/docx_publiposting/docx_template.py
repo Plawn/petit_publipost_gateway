@@ -2,14 +2,17 @@ import copy
 import json
 import re
 from typing import Dict, Generator, Set, Union
-
+import os
 import docx
 from docxtpl import DocxTemplate as _docxTemplate
-
+import uuid
 from ..base_template_engine import TemplateEngine
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
 from .model_handler import Model
+from ...minio_creds import PullInformations, MinioPath
+
+TEMP_FOLDER = 'temp'
 
 
 class docxTemplate(_docxTemplate):
@@ -21,7 +24,8 @@ class docxTemplate(_docxTemplate):
         self.crc_to_new_embedded = {}
         self.pic_to_replace = {}
         self.pic_map = {}
-        self.docx = document if document is not None else docx.Document(filename)
+        self.docx = document if document is not None else docx.Document(
+            filename)
 
 
 # placeholder for now
@@ -36,16 +40,17 @@ class DocxTemplator(TemplateEngine):
     """
     class_separator = '.'
 
-    def __init__(self, filename: str, replacer: MultiReplacer):
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str):
 
-        self.filename = filename
+        self.pull_infos = pull_infos
+
+        self.filename = pull_infos.local
         self.doc: docxTemplate = None
         self.model: Model = None
         self.replacer = replacer
+        # easier for now
+        self.temp_dir = temp_dir
         self.init()
-
-    def __repr__(self):
-        return '<DocxTemplator>'
 
     def __load_fields(self) -> None:
         fields: Set[str] = set(re.findall(
@@ -57,10 +62,17 @@ class DocxTemplator(TemplateEngine):
             cleaned.append((field.strip(), additional_infos))
         self.model = Model(cleaned, self.replacer)
 
-    def init(self, filename='') -> None:
+    def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
-        self.doc = docxTemplate(filename if filename != '' else self.filename)
+        # pulling template from the bucket
+        doc = self.pull_infos.minio.get_object(
+            self.pull_infos.remote.bucket,
+            self.pull_infos.remote.filename)
+        with open(self.filename, 'wb') as file_data:
+            for d in doc.stream(32*1024):
+                file_data.write(d)
+        self.doc = docxTemplate(self.filename)
         self.__load_fields()
 
     def to_json(self) -> dict:
@@ -71,8 +83,8 @@ class DocxTemplator(TemplateEngine):
         Applies the data to the template and returns a `Template`
         """
 
-        # kinda ugly i know
-        # avoid re reading the file from the disk as we already cached it
+        # kinda ugly i know but
+        # we can avoid re reading the file from the disk as we already cached it
         doc = copy.copy(self.doc.docx)
         renderer = docxTemplate(document=doc)
         # here we restore the content of the docx inside the new renderer
@@ -86,6 +98,15 @@ class DocxTemplator(TemplateEngine):
     def re_transform(self, data: dict):
         return utils.change_keys(data, self.replacer.to_doc)
 
-    def render_to(self, data: Dict[str, str], filename: str) -> None:
+    def render_to(self, data: Dict[str, str], path: MinioPath) -> None:
+        save_path = os.path.join(self.temp_dir, str(uuid.uuid4()))
         doc = self.apply_template(data)
-        doc.save(filename)
+        doc.save(save_path)
+
+        try:
+            self.pull_infos.minio.fput_object(
+                path.bucket, path.filename, save_path)
+        except:
+            raise Exception('Failed to upload file')
+        finally:
+            os.remove(save_path)

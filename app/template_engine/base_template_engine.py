@@ -27,3 +27,6 @@ class TemplateEngine(ABC):
     @abstractmethod
     def render_to(self, data: Dict[str, str], filename: str) -> None:
         pass
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}>'
