@@ -7,10 +7,14 @@ MINIO_PASS: adminadmin
 engine_settings:
     docx:
         # we are local so nothing to do
+        port: null
+        host: localhost
         run: []
     xlsx:
+        port: 5003
+        host: http://localhost:5003
         run:
-            - node excel_build/start.js 5002 config.yaml &
+            - node excel_build/start.js 5003 conf.yaml &
 
 manifest:
     new-templates:

@@ -14,7 +14,7 @@ from datetime import timedelta
 import subprocess
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
-
+RUN_TOKEN = 'run'
 # placeholder for now
 BASE_REPLACER = MultiReplacer([FuncReplacer])
 
@@ -45,7 +45,8 @@ class TemplateDB:
 
     def __init_template_servers(self) -> None:
         for name in template_engines:
-            for command in self.engine_settings[name]:
+            for command in self.engine_settings[name][RUN_TOKEN]:
+                print(command)
                 subprocess.call(command, shell=True)
 
     def __init_templators(self):
