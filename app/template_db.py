@@ -21,7 +21,7 @@ class TemplateDB:
     """Holds everything to publipost all types of templates
     """
 
-    def __init__(self, manifest: dict, time_delta: timedelta, temp_folder: str, minio_creds: MinioCreds):
+    def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta, temp_folder: str, minio_creds: MinioCreds):
         self.minio_creds = minio_creds
         self.minio_instance = minio.Minio(
             self.minio_creds.host, self.minio_creds.key, self.minio_creds.password)
@@ -29,6 +29,7 @@ class TemplateDB:
         self.temp_folder = temp_folder
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
+        self.engine_settings = engine_settings
         self.init()
 
     def init(self):
@@ -42,8 +43,6 @@ class TemplateDB:
 
     def __init_template_servers(self) -> None:
         pass
-
-
 
     def __init_templators(self):
         for bucket_name, settings in self.manifest.items():

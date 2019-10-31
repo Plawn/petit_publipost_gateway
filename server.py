@@ -50,7 +50,9 @@ minio_creds = MinioCreds(
     settings['MINIO_KEY'],
     settings['MINIO_PASS'])
 
-template_db = TemplateDB(manifest, TIME_DELTA, TEMP_DIR, minio_creds)
+engine_settings = settings['engine_settings']
+
+template_db = TemplateDB(manifest, engine_settings,TIME_DELTA, TEMP_DIR, minio_creds)
 
 app = Flask(__name__)
 

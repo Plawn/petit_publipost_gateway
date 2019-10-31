@@ -1,10 +1,16 @@
-
-
 # should be imported from the minio creds conf file
 
 MINIO_HOST: documents.juniorisep.com
 MINIO_KEY: adminadmin
 MINIO_PASS: adminadmin
+
+engine_settings:
+    docx:
+        # we are local so nothing to do
+        run: []
+    xlsx:
+        run:
+            - node excel_build/start.js 5002 config.yaml
 
 manifest:
     new-templates:
