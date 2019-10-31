@@ -14,15 +14,17 @@ COPY . /api
 
 COPY --from=source /api/build/ excel_build/
 # installing node
-RUN apt  update
+RUN apt update
 RUN apt install -y curl gnupg
 RUN curl -sL https://deb.nodesource.com/setup_11.x  | bash -
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - 
+RUN echo deb "https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+
+RUN apt update && sudo apt install yarn
 RUN apt install -y nodejs
-RUN npm install yarn
+
+# building server
 RUN cd excel_build && yarn install
-
-
-
 
 EXPOSE 5000
 
