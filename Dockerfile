@@ -12,7 +12,7 @@ RUN pip3 install -r requirements.txt && pip3 install gunicorn json-logging-py
 
 COPY . /api
 
-COPY --from=source build/ excel_build/
+COPY --from=source /api/build/ excel_build/
 # installing node
 RUN apt  update
 RUN apt install -y curl gnupg
