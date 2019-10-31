@@ -10,7 +10,7 @@ engine_settings:
         run: []
     xlsx:
         run:
-            - node excel_build/start.js 5002 config.yaml
+            - node excel_build/start.js 5002 config.yaml &
 
 manifest:
     new-templates:

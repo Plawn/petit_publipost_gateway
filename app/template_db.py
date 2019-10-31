@@ -7,9 +7,11 @@ import minio
 
 from .template_engine.ReplacerMiddleware import (FuncReplacer,
                                                  MultiReplacer)
+from .template_engine import template_engines
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
 from datetime import timedelta
+import subprocess
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
@@ -42,7 +44,9 @@ class TemplateDB:
         return self.templators[_type].render(name, data, output)
 
     def __init_template_servers(self) -> None:
-        pass
+        for name in template_engines:
+            for command in self.engine_settings[name]:
+                subprocess.call(command, shell=True)
 
     def __init_templators(self):
         for bucket_name, settings in self.manifest.items():
