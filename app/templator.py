@@ -9,7 +9,7 @@ import Fancy_term as term
 from .template_engine import template_engines, TemplateEngine
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .minio_creds import MinioPath, PullInformations
-from .utils import error_printer, success_printer
+from .utils import error_printer, success_printer, info_printer
 from .template_engine.model_handler.utils import change_keys
 
 
@@ -62,7 +62,7 @@ class Templator:
         """Downloading and caching all templates from Minio
         """
         if self.verbose:
-            print(
+            info_printer(
                 f'Importing template from bucket "{self.remote_template_bucket}"')
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(

@@ -20,7 +20,8 @@ success_printer = term.Smart_print(term.Style(
     color=term.colors.green, substyles=[term.substyles.bold]))
 error_printer = term.Smart_print(term.Style(
     color=term.colors.red, substyles=[term.substyles.bold]))
-
+info_printer = term.Smart_print(term.Style(
+    color=term.colors.yellow, substyles=[term.substyles.bold]))
 
 class State:
     def __init__(self):
