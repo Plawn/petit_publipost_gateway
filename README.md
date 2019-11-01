@@ -20,7 +20,7 @@ WHY ? :
 For real tho:
 
 * Will be able to make <span style="color:orange;">**TABLES**</span> !!
-* Now support types WICH MEANS that we'll soon be able to make <span style="color:orange;">REM's</span> and <span style="color:orange;">CET's</span>
+* Now support types WHICH MEANS that we'll soon be able to make <span style="color:orange;">REM's</span> and <span style="color:orange;">CET's</span>
 
 
 ## How to transition ?
