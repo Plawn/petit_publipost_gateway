@@ -17,4 +17,6 @@ RUN cd excel_build && yarn install
 
 EXPOSE 5000
 
-ENTRYPOINT ["python3.7 server.py"]
+COPY entry-point.sh  /usr/local/bin/
+
+ENTRYPOINT ["python3", "/api/server.py"]

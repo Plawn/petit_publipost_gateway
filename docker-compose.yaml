@@ -5,5 +5,5 @@ services:
     image: api-doc2
     env_file: app.env
     ports :
-      - "5001:5000"
+      - "5000:5000"
     restart: unless-stopped
