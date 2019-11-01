@@ -12,9 +12,9 @@ COPY . /api
 
 COPY --from=excel_publiposting /api/build/ excel_build/
 
-# building server
+# installing excel build dependencies
 RUN cd excel_build && yarn install
 
 EXPOSE 5000
 
-ENTRYPOINT ["/usr/local/bin/gunicorn", "--config", "/api/gunicorn.py", "--log-config", "/api/logging.conf", "-b", ":5000", "server:app"]
+ENTRYPOINT ["python3.7 server.py"]

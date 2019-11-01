@@ -7,7 +7,8 @@ Empty interfaces for static typing linting
 from abc import abstractmethod, ABC
 from .ReplacerMiddleware import MultiReplacer
 from typing import Dict
-
+from ..minio_creds import PullInformations
+from .model_handler import Model
 
 class Template(ABC):
     @abstractmethod
@@ -17,8 +18,9 @@ class Template(ABC):
 
 class TemplateEngine(ABC):
     @abstractmethod
-    def __init__(self, filename: str, replacer: MultiReplacer):
-        pass
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+        self.model = Model([], replacer)
+        self.replacer = replacer
 
     @abstractmethod
     def apply_template(self, data: Dict[str, str]) -> Template:

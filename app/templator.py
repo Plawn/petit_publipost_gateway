@@ -9,13 +9,11 @@ import Fancy_term as term
 from .template_engine import template_engines, TemplateEngine
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .minio_creds import MinioPath, PullInformations
+from .utils import error_printer, success_printer
+from .template_engine.model_handler.utils import change_keys
+
 
 TEMP_FOLDER = 'temp'
-
-success_printer = term.Smart_print(term.Style(
-    color=term.colors.green, substyles=[term.substyles.bold]))
-error_printer = term.Smart_print(term.Style(
-    color=term.colors.red, substyles=[term.substyles.bold]))
 
 
 def from_filename(filename: str) -> Tuple[str, str]:
@@ -34,7 +32,7 @@ class Templator:
     """
 
     def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
-                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer):
+                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer, engine_settings: dict):
         self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
             temp_dir, self.remote_template_bucket)
@@ -43,6 +41,7 @@ class Templator:
         self.minio_instance = minio_instance
         self.time_delta = time_delta
         self.replacer = replacer
+        self.engine_settings = engine_settings
         self.temp_folder = os.path.join(
             self.local_template_directory, TEMP_FOLDER)
         # placeholder
@@ -74,7 +73,7 @@ class Templator:
                 pull_infos = PullInformations(local_filename, MinioPath(
                     self.remote_template_bucket, filename), self.minio_instance)
                 templator = template_engines[ext](
-                    pull_infos, self.replacer, self.temp_folder)
+                    pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
                 self.templates[name] = templator
                 if self.verbose:
                     success_printer(
@@ -93,7 +92,10 @@ class Templator:
     def render(self, template_name: str, data: Dict[str, str], output_name: str) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
 
-        self.templates[template_name].render_to(
+        engine = self.templates[template_name]
+
+        data = change_keys(engine.model.merge(data), engine.replacer.to_doc)
+        engine.render_to(
             data, MinioPath(self.output_path.bucket, output_name))
 
         return self.minio_instance.presigned_get_object(

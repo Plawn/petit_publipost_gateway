@@ -9,10 +9,11 @@ import uuid
 from ..base_template_engine import TemplateEngine
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
-from .model_handler import Model
+from ..model_handler import Model, SyntaxtKit
 from ...minio_creds import PullInformations, MinioPath
 
 TEMP_FOLDER = 'temp'
+SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
 
 class docxTemplate(_docxTemplate):
@@ -40,7 +41,7 @@ class DocxTemplator(TemplateEngine):
     """
     class_separator = '.'
 
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str):
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
 
         self.pull_infos = pull_infos
 
@@ -60,7 +61,7 @@ class DocxTemplator(TemplateEngine):
             field, additional_infos = self.replacer.from_doc(field)
             add_infos(additional_infos)
             cleaned.append((field.strip(), additional_infos))
-        self.model = Model(cleaned, self.replacer)
+        self.model = Model(cleaned, self.replacer, SYNTAX_KIT)
 
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
@@ -88,15 +89,8 @@ class DocxTemplator(TemplateEngine):
         doc = copy.copy(self.doc.docx)
         renderer = docxTemplate(document=doc)
         # here we restore the content of the docx inside the new renderer
-
-        data = self.model.merge(data)
-        data = self.re_transform(data)
-
         renderer.render(data)
         return doc
-
-    def re_transform(self, data: dict):
-        return utils.change_keys(data, self.replacer.to_doc)
 
     def render_to(self, data: Dict[str, str], path: MinioPath) -> None:
         save_path = os.path.join(self.temp_dir, str(uuid.uuid4()))

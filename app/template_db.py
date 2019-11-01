@@ -1,7 +1,7 @@
 import json
 import os
 
-from typing import Dict
+from typing import Dict, Set
 
 import minio
 
@@ -10,11 +10,12 @@ from .template_engine.ReplacerMiddleware import (FuncReplacer,
 from .template_engine import template_engines
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
+from .utils import start_service, State, success_printer, error_printer
 from datetime import timedelta
 import subprocess
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
-RUN_TOKEN = 'run'
+
 # placeholder for now
 BASE_REPLACER = MultiReplacer([FuncReplacer])
 
@@ -32,6 +33,7 @@ class TemplateDB:
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
+        self.state = State()
         self.init()
 
     def init(self):
@@ -45,9 +47,9 @@ class TemplateDB:
 
     def __init_template_servers(self) -> None:
         for name in template_engines:
-            for command in self.engine_settings[name][RUN_TOKEN]:
-                print(command)
-                subprocess.call(command, shell=True)
+            start_service(self.state, self.engine_settings[name])
+            success_printer(f'Successfuly started {name} handler')
+            
 
     def __init_templators(self):
         for bucket_name, settings in self.manifest.items():
@@ -58,10 +60,11 @@ class TemplateDB:
                     MinioPath(bucket_name),
                     MinioPath(settings[OUTPUT_DIRECTORY_TOKEN]),
                     self.time_delta,
-                    BASE_REPLACER
+                    BASE_REPLACER,
+                    self.engine_settings
                 )
             except Exception as e:
-                print(e)
+                error_printer(e.__str__())
 
     def to_json(self):
         return {

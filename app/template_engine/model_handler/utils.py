@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import List
 
-from ...ReplacerMiddleware import MultiReplacer
+from ..ReplacerMiddleware import MultiReplacer
 
 
 class FallbackAction:
@@ -46,3 +46,20 @@ def ensure_keys(d: dict, fallback_action: FallbackAction):
         else:
             if isinstance(item, Mapping):
                 ensure_keys(item, fallback_action)
+
+
+def change_keys(obj: dict, convert: callable) -> dict:
+    """
+    Recursively goes through the dictionary obj and replaces keys with the convert function.
+    """
+    if isinstance(obj, (str, int, float)):
+        return obj
+    if isinstance(obj, dict):
+        new = obj.__class__()
+        for k, v in obj.items():
+            new[convert(k)] = change_keys(v, convert)
+    elif isinstance(obj, (list, set, tuple)):
+        new = obj.__class__(change_keys(v, convert) for v in obj)
+    else:
+        return obj
+    return new
