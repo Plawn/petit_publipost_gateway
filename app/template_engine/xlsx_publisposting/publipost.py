@@ -2,6 +2,7 @@ from ..base_template_engine import TemplateEngine
 from ..model_handler import Model, SyntaxtKit
 import requests
 from ...minio_creds import PullInformations, MinioPath
+from ..ReplacerMiddleware import BaseReplacer
 import json
 
 EXT = '.xlsx'
@@ -13,9 +14,11 @@ class XlsxTemplator(TemplateEngine):
 
     requires_env = (
         'port',
+        'host',
+        'secure',
     )
 
-    def __init__(self, pull_infos: PullInformations, replacer, temp_dir, settings):
+    def __init__(self, pull_infos: PullInformations, replacer: BaseReplacer, temp_dir: str, settings: dict):
 
         self.pull_infos = pull_infos
         self.filename = pull_infos.local
