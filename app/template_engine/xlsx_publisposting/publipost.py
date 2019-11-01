@@ -8,7 +8,13 @@ EXT = '.xlsx'
 
 SYNTAX_KIT = SyntaxtKit('${', '}', '.')
 
+
 class XlsxTemplator(TemplateEngine):
+
+    requires_env = (
+        'port',
+    )
+
     def __init__(self, pull_infos: PullInformations, replacer, temp_dir, settings):
 
         self.pull_infos = pull_infos
@@ -23,11 +29,13 @@ class XlsxTemplator(TemplateEngine):
     def apply_template(self, data):
         raise Exception('not available on this type')
 
-    def render_to(self, data: dict, path: MinioPath):
+    def render_to(self, data: dict, path: MinioPath) -> None:
         data = {'data': data, 'template_name': self.pull_infos.remote.filename,
                 'output_bucket': path.bucket, 'output_name': path.filename}
         res = requests.post(self.url + '/publipost', json=data)
-        return json.loads(res.text)
+        error = json.loads(res.text)
+        if error['error']:
+            raise Exception('An error has occured')
 
     def __load_fields(self):
         res = json.loads(requests.post(self.url + '/get_placeholders',

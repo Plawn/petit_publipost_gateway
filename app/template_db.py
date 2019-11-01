@@ -7,7 +7,7 @@ import minio
 
 from .template_engine.ReplacerMiddleware import (FuncReplacer,
                                                  MultiReplacer)
-from .template_engine import template_engines
+from .template_engine import template_engines, TemplateEngine
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
 from .utils import start_service, State, success_printer, error_printer
@@ -37,8 +37,8 @@ class TemplateDB:
         self.init()
 
     def init(self):
-        self.__init_template_servers()
-        self.__init_templators()
+        engines = self.__init_template_servers()
+        self.__init_templators(engines)
         for templator in self.templators.values():
             templator.pull_templates()
 
@@ -46,12 +46,19 @@ class TemplateDB:
         return self.templators[_type].render(name, data, output)
 
     def __init_template_servers(self) -> None:
-        for name in template_engines:
-            start_service(self.state, self.engine_settings[name])
-            success_printer(f'Successfuly started {name} handler')
-            
+        available_engines: Dict[str, TemplateEngine] = {}
+        for name, engine in template_engines.items():
+            env = self.engine_settings[name]
+            ok, missing = engine.check_env(env)
+            if ok:
+                start_service(self.state, env)
+                success_printer(f'Successfuly started "{name}" handler')
+                available_engines[name] = engine
+            else:
+                error_printer(f'Invalid env for handler "{name}" | missing keys {missing}')
+        return available_engines
 
-    def __init_templators(self):
+    def __init_templators(self, engines: Dict[str, TemplateEngine]):
         for bucket_name, settings in self.manifest.items():
             try:
                 self.templators[settings['type']] = Templator(
@@ -61,7 +68,8 @@ class TemplateDB:
                     MinioPath(settings[OUTPUT_DIRECTORY_TOKEN]),
                     self.time_delta,
                     BASE_REPLACER,
-                    self.engine_settings
+                    self.engine_settings,
+                    engines
                 )
             except Exception as e:
                 error_printer(e.__str__())

@@ -32,7 +32,8 @@ class Templator:
     """
 
     def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
-                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer, engine_settings: dict):
+                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer, engine_settings: dict,
+                 available_engines: Dict[str, TemplateEngine]):
         self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
             temp_dir, self.remote_template_bucket)
@@ -46,6 +47,7 @@ class Templator:
             self.local_template_directory, TEMP_FOLDER)
         # placeholder
         self.verbose = True
+        self.available_engines: Dict[str, TemplateEngine] = available_engines
 
         self.__init_cache()
 
@@ -72,7 +74,7 @@ class Templator:
                     self.local_template_directory, filename)
                 pull_infos = PullInformations(local_filename, MinioPath(
                     self.remote_template_bucket, filename), self.minio_instance)
-                templator = template_engines[ext](
+                templator = self.available_engines[ext](
                     pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
                 self.templates[name] = templator
                 if self.verbose:

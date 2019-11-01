@@ -39,7 +39,7 @@ def add_infos(_dict: dict) -> None:
 class DocxTemplator(TemplateEngine):
     """
     """
-    class_separator = '.'
+    requires_env = []
 
     def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
 
