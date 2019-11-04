@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict, Set, Tuple
 import subprocess
 import os
 import time
@@ -23,16 +23,50 @@ error_printer = term.Smart_print(term.Style(
 info_printer = term.Smart_print(term.Style(
     color=term.colors.yellow, substyles=[term.substyles.bold]))
 
+
 class State:
     def __init__(self):
         self.used_ports: Dict[str, Set[int]] = {}
 
 
-def start_service(state: State, service_infos: dict, max_wait: timedelta = timedelta(seconds = 10)):
+CommandReturn = Tuple[int, str, str]
+
+
+def run_command(cmd: str, communicate=True) -> CommandReturn:
+    proc = None
+    if not communicate:
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            universal_newlines=True)
+    else:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            universal_newlines=True)
+    std_out, std_err = proc.communicate()
+    return proc.returncode, std_out, std_err
+
+
+def prepare_command(command: str) -> str:
+    if command[-1] == '?':
+        if command[-2] == '!':
+            # if we have "!" -> no communicate
+            return command[:-2], True, False
+        return command[:-1], True, True
+    return command, False, True
+
+
+def start_service(state: State, service_infos: dict, max_wait: timedelta = timedelta(seconds=10)):
     # not using max wait for now, but should timeout on it later
     if BEFORE_SCRIPT_TOKEN in service_infos:
         for command in service_infos[BEFORE_SCRIPT_TOKEN]:
-            subprocess.call(command, shell=True)
+            command, can_fail, communicate = prepare_command(command)
+            code, out, err = run_command(command, communicate)
+            if code != 0 and not can_fail:
+                raise Exception(f'failed to run command {command} -> {err}')
     if RUN_TOKEN in service_infos:
         ports = service_infos[PORT_TOKEN]
         if ports is not None and len(ports) > 0:
@@ -50,7 +84,10 @@ def start_service(state: State, service_infos: dict, max_wait: timedelta = timed
 
         # if everytthing is good then start
         for command in service_infos[RUN_TOKEN]:
-            subprocess.call(command, shell=True)
+            command, can_fail, communicate = prepare_command(command)
+            code, out, err = run_command(command, communicate)
+            if code != 0 and not can_fail:
+                raise Exception(f'failed to run command {command} -> {err}')
 
         if AWAIT_FILE_TOKEN in service_infos:
             await_file_exist(set(service_infos[AWAIT_FILE_TOKEN]))

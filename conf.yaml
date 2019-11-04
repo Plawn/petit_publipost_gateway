@@ -5,19 +5,16 @@ MINIO_KEY: adminadmin
 MINIO_PASS: adminadmin
 
 engine_settings:
-    docx:
-        # we are local so nothing to do
-        ports: null
+    docx: {}
     xlsx:
-        port: 5001
-        ports: 
+        ports:
             - 5001
-        host: localhost
+        host: localhost:5001
         secure: false
-        before_script :
-            - rm xlsx_pid
+        before_script:
+            - rm xlsx_pid ?
         script:
-            - node excel_build/start.js 5001 conf.yaml "touch xlsx_pid" > /dev/null &
+            - node excel_build/start.js 5001 conf.yaml "touch xlsx_pid" > /dev/null & !?
         await_file:
             - xlsx_pid
 

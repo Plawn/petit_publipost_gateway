@@ -13,7 +13,6 @@ SYNTAX_KIT = SyntaxtKit('${', '}', '.')
 class XlsxTemplator(TemplateEngine):
 
     requires_env = (
-        'port',
         'host',
         'secure',
     )
@@ -47,7 +46,7 @@ class XlsxTemplator(TemplateEngine):
         self.model = Model(res, self.replacer, SYNTAX_KIT)
 
     def _init(self):
-        self.url = f"http{'s' if self.settings['secure'] else ''}://{self.settings['host']}:{self.settings['port']}"
+        self.url = f"http{'s' if self.settings['secure'] else ''}://{self.settings['host']}"
         res = json.loads(requests.post(self.url + '/load_templates', json=[
             {'bucket_name': self.pull_infos.remote.bucket,
                 'template_name': self.pull_infos.remote.filename}
