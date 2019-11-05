@@ -25,9 +25,8 @@ from typing import Dict, Union
 import yaml
 from flask import Flask, jsonify, request
 
-from .ressources import TEMP_DIR, template_db
+from .ressources import TEMP_DIR,template_db
 from .template_db import MinioCreds, MinioPath, TemplateDB
-
 
 
 app = Flask(__name__)
