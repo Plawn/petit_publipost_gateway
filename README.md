@@ -1,7 +1,16 @@
 # API-DOC-2
 
+### Docker Setup
 
 PLS mount the conf file into /api/conf.yaml
+
+### Installation
+
+```sh
+$ pip install -r requirements.txt
+$ ./build_excel.sh
+```
+
 
 ## Summary
 

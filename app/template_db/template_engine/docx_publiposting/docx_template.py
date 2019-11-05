@@ -70,6 +70,7 @@ class DocxTemplator(TemplateEngine):
         doc = self.pull_infos.minio.get_object(
             self.pull_infos.remote.bucket,
             self.pull_infos.remote.filename)
+        print('writing to ', self.filename)
         with open(self.filename, 'wb') as file_data:
             for d in doc.stream(32*1024):
                 file_data.write(d)

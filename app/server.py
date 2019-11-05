@@ -15,44 +15,20 @@ manifest:
 
 """
 
-import yaml
 import json
 import os
 import shutil
 import traceback
+from datetime import timedelta
 from typing import Dict, Union
 
+import yaml
 from flask import Flask, jsonify, request
 
-from app import MinioCreds, MinioPath, TemplateDB
-from datetime import timedelta
+from .ressources import TEMP_DIR, template_db
+from .template_db import MinioCreds, MinioPath, TemplateDB
 
 
-# should be env or config variable
-TIME_DELTA = timedelta(days=1)
-TEMP_DIR = 'temp'
-MANIFEST_TOKEN = 'manifest'
-
-if os.path.exists(TEMP_DIR):
-    shutil.rmtree(TEMP_DIR)
-os.mkdir(TEMP_DIR)
-
-
-conf_filename: str = os.environ['CONF_FILE']
-
-with open(conf_filename, 'r') as f:
-    settings: Dict[str, object] = yaml.load(f)
-
-manifest = settings[MANIFEST_TOKEN]
-
-minio_creds = MinioCreds(
-    settings['MINIO_HOST'],
-    settings['MINIO_KEY'],
-    settings['MINIO_PASS'])
-
-engine_settings = settings['engine_settings']
-
-template_db = TemplateDB(manifest, engine_settings,TIME_DELTA, TEMP_DIR, minio_creds)
 
 app = Flask(__name__)
 
@@ -117,7 +93,3 @@ def publipost_document():
     return jsonify({
         'url': template_db.render_template(_type, document_name, data, filename)
     })
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=False)
