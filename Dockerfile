@@ -2,15 +2,17 @@ FROM registry.dev.juniorisep.com/phoenix/excel-publiposting:prod as excel_publip
 
 FROM nikolaik/python-nodejs:latest
 
-COPY ./requirements.txt /api/requirements.txt
-
 WORKDIR /api
 
-# RUN pip3 install -r requirements.txt && pip3 install gunicorn json-logging-py
+COPY requirements.txt requirements.txt
 
-COPY . /api
+RUN pip3 install -r requirements.txt
 
-COPY --from=excel_publiposting /api/build/ excel-publiposting/
+COPY . /api/
+
+RUN mkdir modules
+
+COPY --from=excel_publiposting /api/build/ modules/excel-publiposting/
 
 # installing dependencies
 # no need to build as the docker is already built
