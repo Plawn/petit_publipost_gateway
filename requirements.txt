@@ -4,3 +4,4 @@ docxtpl
 pyyaml
 requests
 Fancy_term
+gevent
