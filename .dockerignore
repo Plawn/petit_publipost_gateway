@@ -7,3 +7,4 @@ tests
 docker-compose.yaml
 excel_build
 node_modules
+modules
