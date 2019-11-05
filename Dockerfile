@@ -8,7 +8,7 @@ COPY requirements.txt requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-COPY . /api/
+COPY . .
 
 RUN mkdir modules
 
@@ -16,7 +16,7 @@ COPY --from=excel_publiposting /api/build/ modules/excel-publiposting/
 
 # installing dependencies
 # no need to build as the docker is already built
-RUN cd excel-publiposting && yarn install
+RUN cd modules/excel-publiposting && yarn install
 
 EXPOSE 5000
 
