@@ -5,25 +5,25 @@ MINIO_KEY: minio
 MINIO_PASS: 4wsLZmoo0UMdI5RcdiyNv6St
 
 engine_settings:
-    docx: {}
-    xlsx:
-        # only to inform the server that this port is used
-        ports:
-            - 5001
-        host: localhost:5001
-        secure: false
-        before_script:
-            - rm xlsx_pid ?
-        after_script :
-            - rm xlsx_pid
-        script:
-            - node modules/excel-publiposting/build/start.js 5001 conf.yaml "touch xlsx_pid" > /dev/null & !?
-        await_file:
-            - xlsx_pid
+  docx: {}
+  xlsx:
+    # only to inform the server that this port is used
+    ports:
+      - 5001
+    host: localhost:5001
+    secure: false
+    before_script:
+      - rm xlsx_pid ?
+    after_script:
+      - rm xlsx_pid ?
+    script:
+      - node modules/excel-publiposting/build/start.js 5001 conf.yaml "touch xlsx_pid" > /dev/null & !?
+    await_file:
+      - xlsx_pid
 
 manifest:
-    new-templates:
-        # output bucket
-        output_bucket: new-output
-        # thats the name under which the document will be accessible
-        type: mission
+  new-templates:
+    # output bucket
+    output_bucket: new-output
+    # thats the name under which the document will be accessible
+    type: mission
