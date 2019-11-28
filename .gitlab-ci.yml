@@ -23,8 +23,9 @@ build-master:
 build-staging:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:staging || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:staging --tag $CI_REGISTRY_IMAGE:staging .
-    - docker push $CI_REGISTRY_IMAGE:staging
+    #- docker pull $CI_REGISTRY_IMAGE:staging || true
+    #- docker build --cache-from $CI_REGISTRY_IMAGE:staging --tag $CI_REGISTRY_IMAGE:staging .
+    #- docker push $CI_REGISTRY_IMAGE:staging
+    - echo CI_COMMIT_REF_NAME
   only:
     - staging
