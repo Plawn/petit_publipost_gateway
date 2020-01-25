@@ -25,7 +25,7 @@ from typing import Dict, Union
 import yaml
 from flask import Flask, jsonify, request
 
-from .ressources import TEMP_DIR,template_db
+from .ressources import TEMP_DIR, template_db
 from .template_db import MinioCreds, MinioPath, TemplateDB
 
 
@@ -54,7 +54,7 @@ def get_fields_document(_type: str, name: str):
     if _type in template_db.templators:
         # check if template name exists
         if name in template_db.templators[_type].templates:
-            return jsonify(template_db.templators[_type].templates[name].to_json())
+            return jsonify(template_db.templators[_type].templates[name].get_fields())
         return jsonify({'error': 'Template does not exists'}), 404
     else:
         return jsonify({'error': 'Type not found'}), 404

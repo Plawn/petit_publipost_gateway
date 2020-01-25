@@ -76,9 +76,6 @@ class DocxTemplator(TemplateEngine):
         self.doc = docxTemplate(self.filename)
         self.__load_fields()
 
-    def to_json(self) -> dict:
-        return self.model.structure
-
     def apply_template(self, data: Dict[str, str]) -> docxTemplate:
         """
         Applies the data to the template and returns a `Template`

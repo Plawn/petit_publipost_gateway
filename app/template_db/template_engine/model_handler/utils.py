@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import List
+from typing import List, Dict, Tuple
 
 from ..ReplacerMiddleware import MultiReplacer
 
@@ -63,3 +63,19 @@ def change_keys(obj: dict, convert: callable) -> dict:
     else:
         return obj
     return new
+
+
+def prepare_name(string: str) -> Tuple[str, str]:
+    top_level, *other_level = string.split('.')
+    return top_level, '.'.join(other_level)
+
+
+def prepare_names(strings) -> Dict[str, List[str]]:
+    d: Dict[str, List[str]] = {}
+    for string in strings:
+        top_level, rest = prepare_name(string)
+        if top_level in d:
+            d[top_level].append(rest)
+        else:
+            d[top_level] = [rest]
+    return d

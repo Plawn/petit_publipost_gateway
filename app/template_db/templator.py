@@ -32,7 +32,8 @@ class Templator:
     """
 
     def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
-                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer, engine_settings: dict,
+                 output_path: MinioPath, time_delta: datetime.timedelta,
+                 replacer: MultiReplacer, engine_settings: dict,
                  available_engines: Dict[str, TemplateEngine]):
         self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
@@ -88,7 +89,7 @@ class Templator:
 
     def to_json(self):
         return {
-            name: template.model.to_json() for name, template in self.templates.items()
+            name: template.get_fields() for name, template in self.templates.items()
         }
 
     def render(self, template_name: str, data: Dict[str, str], output_name: str) -> str:

@@ -6,7 +6,7 @@ Empty interfaces for static typing linting
 """
 from abc import abstractmethod, ABC
 from .ReplacerMiddleware import MultiReplacer
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple, Set, List
 from ..minio_creds import PullInformations
 from .model_handler import Model, SyntaxtKit
 
@@ -21,8 +21,8 @@ class TemplateEngine(ABC):
     requires_env: Tuple[str] = []
 
     @classmethod
-    def check_env(cls, env:dict) -> bool:
-        missing_keys:Set[str] = set()
+    def check_env(cls, env: dict) -> bool:
+        missing_keys: Set[str] = set()
         for key in cls.requires_env:
             if key not in env:
                 missing_keys.add(key)
@@ -40,6 +40,12 @@ class TemplateEngine(ABC):
     @abstractmethod
     def render_to(self, data: Dict[str, str], filename: str) -> None:
         pass
+
+    def to_json(self) -> dict:
+        return self.model.structure
+
+    def get_fields(self) -> List[str]:
+        return self.model.fields
 
     def __repr__(self):
         return f'<{self.__class__.__name__}>'

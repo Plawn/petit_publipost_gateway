@@ -4,10 +4,17 @@ import requests
 from ...minio_creds import PullInformations, MinioPath
 from ..ReplacerMiddleware import BaseReplacer
 import json
+from dataclasses import dataclass
 
 EXT = '.xlsx'
 
 SYNTAX_KIT = SyntaxtKit('${', '}', '.')
+
+
+@dataclass
+class Settings:
+    host: str
+    secure: bool
 
 
 class XlsxTemplator(TemplateEngine):
@@ -23,7 +30,7 @@ class XlsxTemplator(TemplateEngine):
         self.filename = pull_infos.local
         self.replacer = replacer
         self.temp_dir = temp_dir
-        self.settings = settings
+        self.settings = Settings(settings['host'], settings['secure'])
         self.url: str = None
         self.model = None
         self._init()
@@ -32,8 +39,12 @@ class XlsxTemplator(TemplateEngine):
         raise Exception('not available on this type')
 
     def render_to(self, data: dict, path: MinioPath) -> None:
-        data = {'data': data, 'template_name': self.pull_infos.remote.filename,
-                'output_bucket': path.bucket, 'output_name': path.filename}
+        data = {
+            'data': data,
+            'template_name': self.pull_infos.remote.filename,
+            'output_bucket': path.bucket,
+            'output_name': path.filename
+        }
         res = requests.post(self.url + '/publipost', json=data)
         error = json.loads(res.text)
         if error['error']:
@@ -46,14 +57,13 @@ class XlsxTemplator(TemplateEngine):
         self.model = Model(res, self.replacer, SYNTAX_KIT)
 
     def _init(self):
-        self.url = f"http{'s' if self.settings['secure'] else ''}://{self.settings['host']}"
+        self.url = f"http{'s' if self.settings.secure else ''}://{self.settings.host}"
         res = json.loads(requests.post(self.url + '/load_templates', json=[
-            {'bucket_name': self.pull_infos.remote.bucket,
-                'template_name': self.pull_infos.remote.filename}
+            {
+                'bucket_name': self.pull_infos.remote.bucket,
+                'template_name': self.pull_infos.remote.filename
+            }
         ]).text)
         if len(res['success']) < 1:
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()
-
-    def to_json(self):
-        return self.model.to_json()

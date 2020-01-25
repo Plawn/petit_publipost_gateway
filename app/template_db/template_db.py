@@ -34,11 +34,15 @@ class TemplateDB:
         self.time_delta = time_delta
         self.engine_settings = engine_settings
         self.state = State()
+        self.__init_engines()
         self.init()
 
-    def init(self):
+
+    def __init_engines(self):
         engines = self.__init_template_servers()
         self.__init_templators(engines)
+
+    def init(self):
         for templator in self.templators.values():
             templator.pull_templates()
 

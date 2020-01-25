@@ -15,6 +15,8 @@ class SyntaxtKit:
         self.sep = sep
 
 
+StringAndInfos = List[Tuple[str, Dict[str, str]]]
+
 BASE_KIT = SyntaxtKit('{{', '}}', '.')
 
 
@@ -22,16 +24,16 @@ class Model:
     """To safely replace with jinja2 template
     """
 
-    def __init__(self, strings: List[str], replacer: MultiReplacer, syntax_kit: SyntaxtKit):
+    def __init__(self, strings_and_info: StringAndInfos, replacer: MultiReplacer, syntax_kit: SyntaxtKit):
         self.syntax: SyntaxtKit = syntax_kit
         self.structure = None
         self.replacer = replacer
         self.fallback_action = ThisFallbackAction(
             FIELD_NAME_OPTION, self.replacer)
+        self.fields = utils.prepare_names((i[0] for i in strings_and_info))
+        self.load(strings_and_info, self.replacer)
 
-        self.load(strings, self.replacer)
-
-    def load(self, strings_and_info: List[Tuple[str, Dict[str, str]]], replacer: MultiReplacer):
+    def load(self, strings_and_info: StringAndInfos, replacer: MultiReplacer):
         """
         Makes a model for a given list of string like :
 
