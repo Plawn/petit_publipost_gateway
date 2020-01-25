@@ -1,4 +1,4 @@
-FROM registry.dev.juniorisep.com/phoenix/excel-publiposting:prod as excel_publiposting
+FROM registry.dev.juniorisep.com/phoenix/publiposting-services/excel-publiposting:prod as excel_publiposting
 
 FROM nikolaik/python-nodejs:latest
 
