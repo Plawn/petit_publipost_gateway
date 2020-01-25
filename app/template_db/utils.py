@@ -4,6 +4,7 @@ import os
 import time
 import Fancy_term as term
 from datetime import timedelta
+from .template_engine import from_strings_to_dict
 
 RUN_TOKEN = 'script'
 PORT_TOKEN = 'ports'
@@ -59,12 +60,13 @@ def prepare_command(command: str) -> str:
     return command, False, True
 
 
-def run_script(commands:List[str]) -> None :
+def run_script(commands: List[str]) -> None:
     for command in commands:
         command, can_fail, communicate = prepare_command(command)
         code, out, err = run_command(command, communicate)
         if code != 0 and not can_fail:
             raise Exception(f'failed to run command {command} -> {err}')
+
 
 def start_service(state: State, service_infos: dict, max_wait: timedelta = timedelta(seconds=10)):
     # not using max wait for now, but should timeout on it later
@@ -90,12 +92,13 @@ def start_service(state: State, service_infos: dict, max_wait: timedelta = timed
 
         # if everytthing is good then start
         run_script(service_infos[RUN_TOKEN])
-        
+
         if AWAIT_FILE_TOKEN in service_infos:
             await_file_exist(set(service_infos[AWAIT_FILE_TOKEN]))
 
-        if AFTER_TOKEN in service_infos :
+        if AFTER_TOKEN in service_infos:
             run_script(service_infos[AFTER_TOKEN])
+
 
 def await_file_exist(filenames: Set[str], sleep_precision=1):
     """Awaits that all given files exist then return

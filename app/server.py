@@ -26,8 +26,7 @@ import yaml
 from flask import Flask, jsonify, request
 
 from .ressources import TEMP_DIR, template_db
-from .template_db import MinioCreds, MinioPath, TemplateDB
-
+from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict
 
 app = Flask(__name__)
 
@@ -86,9 +85,9 @@ def reload_document():
 def publipost_document():
     form: Dict[str, Union[str, Dict[str, str]]] = request.get_json()
     _type: str = form['type']
-    document_name: str = form['document_name']
+    document_name: str = form['template_name']
     filename: str = form['filename']
-    data: Dict[str, Dict[str, str]] = form['data']
+    data: Dict[str, Dict[str, str]] = from_strings_to_dict(form['data'])
     return jsonify({
         'url': template_db.render_template(_type, document_name, data, filename)
     })

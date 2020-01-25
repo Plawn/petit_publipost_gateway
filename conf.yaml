@@ -9,15 +9,15 @@ engine_settings:
   xlsx:
     # only to inform the server that this port is used
     ports:
-      - 5001
-    host: localhost:5001
+      - 5002
+    host: localhost:5002
     secure: false
     before_script:
       - rm xlsx_pid ?
     after_script:
       - rm xlsx_pid ?
     script:
-      - node modules/excel-publiposting/build/start.js 5001 conf.yaml "touch xlsx_pid" > /dev/null & !?
+      - node modules/excel-publiposting/build/start.js 5002 conf.yaml "touch xlsx_pid" > /dev/null & !?
     await_file:
       - xlsx_pid
 

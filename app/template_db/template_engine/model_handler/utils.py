@@ -79,3 +79,44 @@ def prepare_names(strings) -> Dict[str, List[str]]:
         else:
             d[top_level] = [rest]
     return d
+
+
+
+def from_strings_to_dict(data: Dict[str, str]):
+    """
+    Makes a model for a given list of string like :
+
+    "mission.document.name": "test" => {
+        mission: {
+            document: {
+                name: "test"
+            }
+        }
+    }
+    This way we will merge the model with the input in order to ensure that placeholder are replaced with what we want
+    """
+    res = {}
+    for key, value in data.items():
+        l = key.split('.')
+        previous = []
+        end = len(l) - 1
+        for i, item in enumerate(l):
+            d = res
+            last_node = None
+            last_prev = None
+            for prev in previous[:-1]:
+                d = d[prev]
+                last_node = d
+                last_prev = prev
+
+            if len(previous) > 0:
+                d = d[previous[-1]]
+                last_prev = previous[-1]
+
+            if item not in d:
+                if i != end:
+                    d[item] = {}
+                else:
+                    d[item] = value
+            previous.append(item)
+    return res
