@@ -78,8 +78,7 @@ def prepare_names(strings) -> Dict[str, List[str]]:
             d[top_level].add(rest)
         else:
             d[top_level] = {rest}
-    return {i:list(j) for i, j in d.items()}
-
+    return {i: list(j) for i, j in d.items()}
 
 
 def from_strings_to_dict(data: Dict[str, str]):
