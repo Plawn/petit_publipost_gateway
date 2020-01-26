@@ -12,6 +12,9 @@ engine_settings:
       - 5002
     host: localhost:5002
     secure: false
+  
+    # will be removed in the next version
+    # working but awful to look at
     before_script:
       - rm xlsx_pid ?
     after_script:
