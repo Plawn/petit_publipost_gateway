@@ -8,7 +8,7 @@ PLS mount the conf file into /api/conf.yaml
 
 ```sh
 $ pip install -r requirements.txt
-$ ./build_excel.sh
+$ ./build_modules.sh
 ```
 
 

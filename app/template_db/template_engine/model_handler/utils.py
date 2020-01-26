@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Set
 
 from ..ReplacerMiddleware import MultiReplacer
 
@@ -71,14 +71,14 @@ def prepare_name(string: str) -> Tuple[str, str]:
 
 
 def prepare_names(strings) -> Dict[str, List[str]]:
-    d: Dict[str, List[str]] = {}
+    d: Dict[str, Set[str]] = {}
     for string in strings:
         top_level, rest = prepare_name(string)
         if top_level in d:
-            d[top_level].append(rest)
+            d[top_level].add(rest)
         else:
-            d[top_level] = [rest]
-    return d
+            d[top_level] = {rest}
+    return {i:list(j) for i, j in d.items()}
 
 
 
