@@ -26,7 +26,6 @@ engine_settings:
 
 manifest:
   new-templates:
-    # output bucket
     output_bucket: new-output
     # thats the name under which the document will be accessible
     type: mission

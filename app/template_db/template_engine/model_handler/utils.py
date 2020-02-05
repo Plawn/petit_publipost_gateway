@@ -102,15 +102,12 @@ def from_strings_to_dict(data: Dict[str, str]):
         for i, item in enumerate(l):
             d = res
             last_node = None
-            last_prev = None
             for prev in previous[:-1]:
                 d = d[prev]
                 last_node = d
-                last_prev = prev
 
             if len(previous) > 0:
                 d = d[previous[-1]]
-                last_prev = previous[-1]
 
             if item not in d:
                 if i != end:

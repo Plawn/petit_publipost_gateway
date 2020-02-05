@@ -91,3 +91,7 @@ def publipost_document():
     return jsonify({
         'url': template_db.render_template(_type, document_name, data, filename)
     })
+
+@app.route('/live', methods=['GET'])
+def live():
+    return 'OK', 200
