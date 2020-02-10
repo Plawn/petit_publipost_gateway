@@ -53,6 +53,10 @@ class DocxTemplator(TemplateEngine):
         self.temp_dir = temp_dir
         self.init()
 
+    @staticmethod
+    def configure(env: dict):
+        return True
+
     def __load_fields(self) -> None:
         fields: Set[str] = set(re.findall(
             r"\{{(.*?)\}}", self.doc.get_xml(), re.MULTILINE))

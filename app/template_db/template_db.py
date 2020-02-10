@@ -1,3 +1,4 @@
+import traceback
 import json
 import os
 
@@ -10,7 +11,7 @@ from .template_engine.ReplacerMiddleware import (FuncReplacer,
 from .template_engine import template_engines, TemplateEngine
 from .minio_creds import MinioCreds, MinioPath
 from .templator import Templator
-from .utils import start_service, State, success_printer, error_printer
+from .utils import success_printer, error_printer
 from datetime import timedelta
 import subprocess
 
@@ -33,10 +34,8 @@ class TemplateDB:
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
-        self.state = State()
         self.__init_engines()
         self.init()
-
 
     def __init_engines(self):
         engines = self.__init_template_servers()
@@ -54,12 +53,22 @@ class TemplateDB:
         for name, engine in template_engines.items():
             env = self.engine_settings[name]
             ok, missing = engine.check_env(env)
+            settings = {
+                'env': env,
+                'minio': self.minio_creds
+            }
             if ok:
-                start_service(self.state, env)
-                success_printer(f'Successfuly started "{name}" handler')
-                available_engines[name] = engine
+                try:
+                    engine.configure(settings)
+                    success_printer(f'Successfuly started "{name}" handler')
+                    available_engines[name] = engine
+                except Exception as e:
+                    error_printer(
+                        f'Failed to start server {engine}')
+                    traceback.print_exc()
             else:
-                error_printer(f'Invalid env for handler "{name}" | missing keys {missing}')
+                error_printer(
+                    f'Invalid env for handler "{name}" | missing keys {missing}')
         return available_engines
 
     def __init_templators(self, engines: Dict[str, TemplateEngine]):
@@ -77,6 +86,7 @@ class TemplateDB:
                 )
             except Exception as e:
                 error_printer(e.__str__())
+                traceback.print_exc()
 
     def to_json(self):
         return {

@@ -1,1 +1,1 @@
-from .publipost import *
+from .publipost_engine import *

@@ -1,7 +1,7 @@
 from ..base_template_engine import TemplateEngine
 from ..model_handler import Model, SyntaxtKit
 import requests
-from ...minio_creds import PullInformations, MinioPath
+from ...minio_creds import PullInformations, MinioPath, MinioCreds
 from ..ReplacerMiddleware import BaseReplacer
 import json
 from dataclasses import dataclass
@@ -30,10 +30,23 @@ class XlsxTemplator(TemplateEngine):
         self.filename = pull_infos.local
         self.replacer = replacer
         self.temp_dir = temp_dir
-        self.settings = Settings(settings['host'], settings['secure'])
+        self.model: Model = None
         self.url: str = None
-        self.model = None
+        self.settings = Settings(settings['host'], settings['secure'])
         self._init()
+
+    @staticmethod
+    def configure(env: dict):
+        settings = env['env']
+        creds: MinioCreds = env['minio']
+        url = f"http{'s' if settings['secure']else ''}://{settings['host']}"
+        data = {
+            'endpoint': creds.host,
+            'access_key': creds.key,
+            'passkey': creds.password,
+        }
+        res = json.loads(requests.post(url + '/configure',
+                                       json=data).text)
 
     def apply_template(self, data):
         raise Exception('not available on this type')

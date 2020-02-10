@@ -44,6 +44,10 @@ class TemplateEngine(ABC):
     def to_json(self) -> dict:
         return self.model.structure
 
+    @staticmethod
+    def configure(env: dict):
+        return False
+
     def get_fields(self) -> List[str]:
         return self.model.fields
 
