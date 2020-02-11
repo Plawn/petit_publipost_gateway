@@ -5,7 +5,9 @@ MINIO_KEY: minio
 MINIO_PASS: 4wsLZmoo0UMdI5RcdiyNv6St
 
 engine_settings:
-  docx: {}
+  docx: 
+    host: localhost:3002
+    secure: false
   xlsx:
     host: localhost:3001
     secure: false

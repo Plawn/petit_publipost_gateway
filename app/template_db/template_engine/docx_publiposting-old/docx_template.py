@@ -1,7 +1,7 @@
 import copy
 import json
 import re
-from typing import Dict, Generator, Set, Union, List
+from typing import Dict, Generator, Set, Union
 import os
 import docx
 from docxtpl import DocxTemplate as _docxTemplate
@@ -10,22 +10,15 @@ from ..base_template_engine import TemplateEngine
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
 from ..model_handler import Model, SyntaxtKit
-from ...minio_creds import PullInformations, MinioPath, MinioCreds
-import requests
-from dataclasses import dataclass
+from ...minio_creds import PullInformations, MinioPath
 
 TEMP_FOLDER = 'temp'
 SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
 
-@dataclass
-class Settings:
-    host: str
-    secure: bool
-
-
 class docxTemplate(_docxTemplate):
-    """Proxying the real class in order to be able to copy.copy the template docx file"""
+    """Proxying the real class in order to be able to copy.copy the template docx file
+    """
 
     def __init__(self, filename: str = '', document=None):
         self.crc_to_new_media = {}
@@ -57,32 +50,18 @@ class DocxTemplator(TemplateEngine):
         self.model: Model = None
         self.replacer = replacer
         # easier for now
-        self.settings = Settings(settings['host'], settings['secure'])
         self.temp_dir = temp_dir
-        self.url: str = None
         self.init()
 
     @staticmethod
     def configure(env: dict):
-        settings = env['env']
-        creds: MinioCreds = env['minio']
-        url = f"http{'s' if settings['secure'] else ''}://{settings['host']}"
-        data = {
-            'host': creds.host,
-            'access_key': creds.key,
-            'pass_key': creds.password,
-        }
-        res = json.loads(requests.post(url + '/configure',
-                                       json=data).text)
-        if res['error']:
-            raise
+        return True
 
     def __load_fields(self) -> None:
-        res = json.loads(requests.post(self.url + '/get_placeholders',
-                                       json={'name': self.pull_infos.remote.filename}).text)
-        fields: List[str] = res
-        cleaned = []
-        for field in fields:
+        fields: Set[str] = set(re.findall(
+            r"\{{(.*?)\}}", self.doc.get_xml(), re.MULTILINE))
+        cleaned = list()
+        for field in utils.xml_cleaner(fields):
             field, additional_infos = self.replacer.from_doc(field)
             add_infos(additional_infos)
             cleaned.append((field.strip(), additional_infos))
@@ -91,15 +70,14 @@ class DocxTemplator(TemplateEngine):
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
-        self.url = f"http{'s' if self.settings.secure else ''}://{self.settings.host}"
-        res = json.loads(requests.post(self.url + '/load_templates', json=[
-            {
-                'bucket_name': self.pull_infos.remote.bucket,
-                'template_name': self.pull_infos.remote.filename
-            }
-        ]).text)
-        if len(res['success']) < 1:
-            raise Exception(f'failed to import {self.filename}')
+        # pulling template from the bucket
+        doc = self.pull_infos.minio.get_object(
+            self.pull_infos.remote.bucket,
+            self.pull_infos.remote.filename)
+        with open(self.filename, 'wb') as file_data:
+            for d in doc.stream(32*1024):
+                file_data.write(d)
+        self.doc = docxTemplate(self.filename)
         self.__load_fields()
 
     def apply_template(self, data: Dict[str, str]) -> docxTemplate:
@@ -107,16 +85,23 @@ class DocxTemplator(TemplateEngine):
         Applies the data to the template and returns a `Template`
         """
 
-        raise
+        # kinda ugly i know but
+        # we can avoid re reading the file from the disk as we already cached it
+        doc = copy.copy(self.doc.docx)
+        renderer = docxTemplate(document=doc)
+        # here we restore the content of the docx inside the new renderer
+        renderer.render(data)
+        return doc
 
     def render_to(self, data: Dict[str, str], path: MinioPath) -> None:
-        data = {
-            'data': data,
-            'template_name': self.pull_infos.remote.filename,
-            'output_bucket': path.bucket,
-            'output_name': path.filename,
-        }
-        res = json.loads(requests.post(self.url + '/publipost', json=data).text)
-        print(res)
-        if res['error']:
-            raise Exception('An error has occured')
+        save_path = os.path.join(self.temp_dir, str(uuid.uuid4()))
+        doc = self.apply_template(data)
+        doc.save(save_path)
+
+        try:
+            self.pull_infos.minio.fput_object(
+                path.bucket, path.filename, save_path)
+        except:
+            raise Exception('Failed to upload file')
+        finally:
+            os.remove(save_path)

@@ -8,8 +8,14 @@ PLS mount the conf file into /api/conf.yaml
 
 ```sh
 $ pip install -r requirements.txt
-$ ./build_modules.sh
 ```
+
+* Install the word-publiposting
+* Install the excel-publiposting
+
+* Start the word-publiposting with the correct port (same as the one in `conf.yaml`)
+* Start the excel-publiposting with the correct port (same as the one in `conf.yaml`)
+
 
 
 ## Summary
@@ -112,3 +118,5 @@ It's supposed to be stored inside the conf file
 - Add syntax for auto-table detection -> should be handled by make model -> YAS
 
 You have to specify the loop variable name to have model_auto_creation :
+
+

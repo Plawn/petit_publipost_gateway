@@ -56,7 +56,7 @@ class XlsxTemplator(TemplateEngine):
             'data': data,
             'template_name': self.pull_infos.remote.filename,
             'output_bucket': path.bucket,
-            'output_name': path.filename
+            'output_name': path.filename,
         }
         res = requests.post(self.url + '/publipost', json=data)
         error = json.loads(res.text)

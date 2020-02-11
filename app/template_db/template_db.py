@@ -53,6 +53,7 @@ class TemplateDB:
         for name, engine in template_engines.items():
             env = self.engine_settings[name]
             ok, missing = engine.check_env(env)
+            # TODO : should make an object using a dataclass
             settings = {
                 'env': env,
                 'minio': self.minio_creds

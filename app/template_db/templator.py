@@ -82,8 +82,8 @@ class Templator:
                     success_printer(
                         f'\t- Successfully imported "{name}" using {templator}')
             except Exception as err:
-                import traceback
-                traceback.print_exc()
+                # import traceback
+                # traceback.print_exc()
                 error_printer(
                     f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
 
