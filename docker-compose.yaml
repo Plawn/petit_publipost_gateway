@@ -6,7 +6,7 @@ services:
     environment: 
       - CONF_FILE=conf.yaml
     ports :
-      - "5000:5000"
+      - "5001:5000"
     volumes: 
       - ./compose-conf.yaml:/api/conf.yaml
     restart: unless-stopped

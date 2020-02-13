@@ -1,18 +1,17 @@
 import copy
 import json
-import re
-from typing import Dict, Generator, Set, Union, List
 import os
-import docx
-from docxtpl import DocxTemplate as _docxTemplate
-import uuid
+import re
+from dataclasses import dataclass
+from typing import Dict, Generator, List, Set, Union
+
+import requests
+
+from ...minio_creds import MinioCreds, MinioPath, PullInformations
 from ..base_template_engine import TemplateEngine
+from ..model_handler import Model, SyntaxtKit
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
-from ..model_handler import Model, SyntaxtKit
-from ...minio_creds import PullInformations, MinioPath, MinioCreds
-import requests
-from dataclasses import dataclass
 
 TEMP_FOLDER = 'temp'
 SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
