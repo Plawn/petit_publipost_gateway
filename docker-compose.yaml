@@ -6,7 +6,7 @@ services:
     environment: 
       - CONF_FILE=conf.yaml
     ports :
-      - "5001:5000"
+      - "5000:5000"
     volumes: 
       - ./compose-conf.yaml:/api/conf.yaml
     restart: unless-stopped
@@ -23,7 +23,7 @@ services:
   excel-engine:
     image: registry.dev.juniorisep.com/phoenix/publiposting-services/excel-publiposting:prod
     ports: 
-      - 5000
+      - 4000
     restart: unless-stopped
 
   

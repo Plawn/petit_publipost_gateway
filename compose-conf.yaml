@@ -10,7 +10,7 @@ engine_settings:
     host: word-engine:5000
     secure: false
   xlsx:
-    host: excel-engine:5000
+    host: excel-engine:4000
     secure: false
 
 manifest:
