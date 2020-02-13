@@ -1,12 +1,10 @@
-image: docker:stable
-
-services:
-  - docker:18.09-dind
+image: docker:19.03.0 
+services:   
+    - docker:19.03-dind
 
 variables:
-  CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_DRIVER: overlay2
+  DOCKER_DRIVER: overlay2   
+  DOCKER_TLS_CERTDIR: "/certs"
 
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
