@@ -1,6 +1,5 @@
 flask
 minio
-docxtpl
 pyyaml
 requests
 Fancy_term

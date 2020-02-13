@@ -1,0 +1,20 @@
+# should be imported from the minio creds conf file
+
+MINIO_HOST: documents.juniorisep.com
+MINIO_KEY: minio
+MINIO_PASS: 4wsLZmoo0UMdI5RcdiyNv6St
+SECURE: true
+
+engine_settings:
+  docx: 
+    host: word-engine:5000
+    secure: false
+  xlsx:
+    host: excel-engine:5000
+    secure: false
+
+manifest:
+  new-templates:
+    output_bucket: new-output
+    # thats the name under which the document will be accessible
+    type: mission
