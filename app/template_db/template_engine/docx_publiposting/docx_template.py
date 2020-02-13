@@ -22,19 +22,6 @@ class Settings:
     host: str
     secure: bool
 
-
-class docxTemplate(_docxTemplate):
-    """Proxying the real class in order to be able to copy.copy the template docx file"""
-
-    def __init__(self, filename: str = '', document=None):
-        self.crc_to_new_media = {}
-        self.crc_to_new_embedded = {}
-        self.pic_to_replace = {}
-        self.pic_map = {}
-        self.docx = document if document is not None else docx.Document(
-            filename)
-
-
 # placeholder for now
 def add_infos(_dict: dict) -> None:
     """Will add infos to the field on the fly
@@ -101,7 +88,7 @@ class DocxTemplator(TemplateEngine):
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()
 
-    def apply_template(self, data: Dict[str, str]) -> docxTemplate:
+    def apply_template(self, data: Dict[str, str]) -> None:
         """
         Applies the data to the template and returns a `Template`
         """
