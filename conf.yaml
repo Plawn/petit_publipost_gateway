@@ -3,6 +3,7 @@
 MINIO_HOST: documents.juniorisep.com
 MINIO_KEY: minio
 MINIO_PASS: 4wsLZmoo0UMdI5RcdiyNv6St
+SECURE: true
 
 engine_settings:
   docx: 

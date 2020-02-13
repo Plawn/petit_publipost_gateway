@@ -10,7 +10,7 @@ TIME_DELTA = timedelta(days=1)
 TEMP_DIR = 'temp'
 MANIFEST_TOKEN = 'manifest'
 
-# should be somewhere else 
+# should be somewhere else
 # preparing temp dir
 if os.path.exists(TEMP_DIR):
     print(f'deleting temp dir {TEMP_DIR}')
@@ -31,11 +31,11 @@ manifest = settings[MANIFEST_TOKEN]
 minio_creds = MinioCreds(
     settings['MINIO_HOST'],
     settings['MINIO_KEY'],
-    settings['MINIO_PASS'])
+    settings['MINIO_PASS'],
+    settings['SECURE'],
+)
 
 engine_settings = settings['engine_settings']
-
-
 
 
 template_db = TemplateDB(

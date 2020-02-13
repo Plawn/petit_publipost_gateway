@@ -28,7 +28,11 @@ class TemplateDB:
     def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta, temp_folder: str, minio_creds: MinioCreds):
         self.minio_creds = minio_creds
         self.minio_instance = minio.Minio(
-            self.minio_creds.host, self.minio_creds.key, self.minio_creds.password)
+            self.minio_creds.host,
+            access_key=self.minio_creds.key,
+            secret_key=self.minio_creds.password,
+            secure=self.minio_creds.secure
+        )
         self.manifest: Dict[str, Dict[str, str]] = manifest
         self.temp_folder = temp_folder
         self.templators: Dict[str, Templator] = {}

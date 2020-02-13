@@ -3,10 +3,11 @@
 import minio
 
 class MinioCreds:
-    def __init__(self, host: str, key: str, password: str):
+    def __init__(self, host: str, key: str, password: str, secure:bool):
         self.key = key
         self.password = password
         self.host = host
+        self.secure = secure
 
 
 class MinioPath:
