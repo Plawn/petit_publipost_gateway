@@ -1,13 +1,14 @@
 FROM python:3.7.2-slim
 
-COPY ./requirements.txt /api/requirements.txt
-
 WORKDIR /api
 
-RUN pip3 install -r requirements.txt && pip3 install gunicorn json-logging-py
+COPY requirements.txt requirements.txt
 
-COPY . /api
+RUN pip3 install -r requirements.txt
+
+COPY . .
 
 EXPOSE 5000
 
-ENTRYPOINT ["/usr/local/bin/gunicorn", "--config", "/api/gunicorn.py", "--log-config", "/api/logging.conf", "-b", ":5000", "server:app"]
+# need to add a real wsgi server after
+ENTRYPOINT ["python3", "start.py", "5000"]

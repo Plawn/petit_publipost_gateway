@@ -15,38 +15,18 @@ manifest:
 
 """
 
-import yaml
 import json
 import os
 import shutil
 import traceback
+from datetime import timedelta
 from typing import Dict, Union
 
+import yaml
 from flask import Flask, jsonify, request
 
-from app import MinioCreds, MinioPath, TemplateDB
-
-TEMP_DIR = 'temp'
-MANIFEST_TOKEN = 'manifest'
-
-if os.path.exists(TEMP_DIR):
-    shutil.rmtree(TEMP_DIR)
-os.mkdir(TEMP_DIR)
-
-
-conf_filename: str = os.environ['CONF_FILE']
-
-with open(conf_filename, 'r') as f:
-    settings: Dict[str, str] = yaml.load(f)
-
-manifest = settings[MANIFEST_TOKEN]
-
-minio_creds = MinioCreds(
-    settings['MINIO_HOST'],
-    settings['MINIO_KEY'],
-    settings['MINIO_PASS'])
-
-template_db = TemplateDB(manifest, TEMP_DIR, minio_creds)
+from .ressources import TEMP_DIR, template_db
+from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict
 
 app = Flask(__name__)
 
@@ -73,7 +53,7 @@ def get_fields_document(_type: str, name: str):
     if _type in template_db.templators:
         # check if template name exists
         if name in template_db.templators[_type].templates:
-            return jsonify(template_db.templators[_type].templates[name].to_json())
+            return jsonify(template_db.templators[_type].templates[name].get_fields())
         return jsonify({'error': 'Template does not exists'}), 404
     else:
         return jsonify({'error': 'Type not found'}), 404
@@ -105,13 +85,13 @@ def reload_document():
 def publipost_document():
     form: Dict[str, Union[str, Dict[str, str]]] = request.get_json()
     _type: str = form['type']
-    document_name: str = form['document_name']
+    document_name: str = form['template_name']
     filename: str = form['filename']
-    data: Dict[str, Dict[str, str]] = form['data']
+    data: Dict[str, Dict[str, str]] = from_strings_to_dict(form['data'])
     return jsonify({
-            'url': template_db.render_template(_type, document_name, data, filename)
-        })
+        'url': template_db.render_template(_type, document_name, data, filename)
+    })
 
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+@app.route('/live', methods=['GET'])
+def live():
+    return 'OK', 200

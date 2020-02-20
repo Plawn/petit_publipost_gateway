@@ -1,5 +1,23 @@
 # API-DOC-2
 
+### Docker Setup
+
+PLS mount the conf file into /api/conf.yaml
+
+### Installation
+
+```sh
+$ pip install -r requirements.txt
+```
+
+* Install the word-publiposting
+* Install the excel-publiposting
+
+* Start the word-publiposting with the correct port (same as the one in `conf.yaml`)
+* Start the excel-publiposting with the correct port (same as the one in `conf.yaml`)
+
+
+
 ## Summary
 
 Better
@@ -17,7 +35,7 @@ WHY ? :
 For real tho:
 
 * Will be able to make <span style="color:orange;">**TABLES**</span> !!
-* Now support types WICH MEANS that we'll soon be able to make <span style="color:orange;">REM's</span> and <span style="color:orange;">CET's</span>
+* Now support types WHICH MEANS that we'll soon be able to make <span style="color:orange;">REM's</span> and <span style="color:orange;">CET's</span>
 
 
 ## How to transition ?
@@ -100,3 +118,5 @@ It's supposed to be stored inside the conf file
 - Add syntax for auto-table detection -> should be handled by make model -> YAS
 
 You have to specify the loop variable name to have model_auto_creation :
+
+

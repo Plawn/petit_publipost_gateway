@@ -4,6 +4,7 @@ from .docx_publiposting import DocxTemplator
 from .xlsx_publisposting import XlsxTemplator
 from .ReplacerMiddleware import MultiReplacer
 from typing import Dict
+from .model_handler import from_strings_to_dict
 
 DOCX = 'docx'
 XLSX = 'xlsx'

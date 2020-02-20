@@ -7,10 +7,10 @@ SECURE: true
 
 engine_settings:
   docx: 
-    host: localhost:3002
+    host: word-engine:5000
     secure: false
   xlsx:
-    host: localhost:3001
+    host: excel-engine:4000
     secure: false
 
 manifest:

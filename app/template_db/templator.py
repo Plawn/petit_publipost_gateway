@@ -8,12 +8,13 @@ from typing import Tuple
 import Fancy_term as term
 from .template_engine import template_engines, TemplateEngine
 from .template_engine.ReplacerMiddleware import MultiReplacer
-from .minio_creds import MinioPath
+from .minio_creds import MinioPath, PullInformations
+from .utils import error_printer, success_printer, info_printer
+from .template_engine.model_handler.utils import change_keys
+
 
 TEMP_FOLDER = 'temp'
 
-success_printer = term.Smart_print(term.Style(color=term.colors.green, substyles=[term.substyles.bold]))
-error_printer = term.Smart_print(term.Style(color=term.colors.red, substyles=[term.substyles.bold]))
 
 def from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
@@ -31,19 +32,24 @@ class Templator:
     """
 
     def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
-                 output_path: MinioPath, time_delta: datetime.timedelta, replacer: MultiReplacer):
-        self.remote_template_directory = minio_path.bucket
+                 output_path: MinioPath, time_delta: datetime.timedelta,
+                 replacer: MultiReplacer, engine_settings: dict,
+                 available_engines: Dict[str, TemplateEngine]):
+        self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
-            temp_dir, self.remote_template_directory)
+            temp_dir, self.remote_template_bucket)
         self.output_path = output_path
         self.templates: Dict[str, TemplateEngine] = {}
         self.minio_instance = minio_instance
         self.time_delta = time_delta
         self.replacer = replacer
-        
+        self.engine_settings = engine_settings
+        self.temp_folder = os.path.join(
+            self.local_template_directory, TEMP_FOLDER)
         # placeholder
         self.verbose = True
-        
+        self.available_engines: Dict[str, TemplateEngine] = available_engines
+
         self.__init_cache()
 
     def __init_cache(self):
@@ -51,52 +57,50 @@ class Templator:
         if os.path.exists(self.local_template_directory):
             shutil.rmtree(self.local_template_directory)
         os.mkdir(self.local_template_directory)
-        os.mkdir(os.path.join(self.local_template_directory, TEMP_FOLDER))
-
+        os.mkdir(self.temp_folder)
 
     def pull_templates(self):
         """Downloading and caching all templates from Minio
         """
-        if self.verbose :
-            print(f'Importing template from bucket "{self.remote_template_directory}"')
-        
+        if self.verbose:
+            info_printer(
+                f'Importing template from bucket "{self.remote_template_bucket}"')
+
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
-            self.remote_template_directory))
+            self.remote_template_bucket))
         for filename in filenames:
             try:
-                doc = self.minio_instance.get_object(
-                    self.remote_template_directory, filename)
-                with open(os.path.join(self.local_template_directory, filename), 'wb') as file_data:
-                    for d in doc.stream(32*1024):
-                        file_data.write(d)
                 name, ext = from_filename(filename)
-                templator = template_engines[ext](
-                    os.path.join(self.local_template_directory, filename), self.replacer)
+                local_filename = os.path.join(
+                    self.local_template_directory, filename)
+                pull_infos = PullInformations(local_filename, MinioPath(
+                    self.remote_template_bucket, filename), self.minio_instance)
+                templator = self.available_engines[ext](
+                    pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
                 self.templates[name] = templator
-                if self.verbose :
-                    success_printer(f'\t- Successfully imported {name} using {templator}')
+                if self.verbose:
+                    success_printer(
+                        f'\t- Successfully imported "{name}" using {templator}')
             except Exception as err:
                 # import traceback
                 # traceback.print_exc()
-                error_printer(f'\tError importing {name} from {self.remote_template_directory} | {err}')
+                error_printer(
+                    f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
 
     def to_json(self):
         return {
-            name: template.model.to_json() for name, template in self.templates.items()
+            name: template.get_fields() for name, template in self.templates.items()
         }
 
     def render(self, template_name: str, data: Dict[str, str], output_name: str) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
-        doc = self.templates[template_name].apply_template(data)
-        save_path = os.path.join(
-            self.local_template_directory, TEMP_FOLDER, str(uuid.uuid4()))
 
-        # if we could stream the resulting file it would be even better
-        # -> wouldn't have to save the file to the disk and then to read it again to push it to minio
-        doc.save(save_path)
-        self.minio_instance.fput_object(
-            self.output_path.bucket, output_name, save_path)
-        os.remove(save_path)
+        engine = self.templates[template_name]
+
+        data = change_keys(engine.model.merge(data), engine.replacer.to_doc)
+        engine.render_to(
+            data, MinioPath(self.output_path.bucket, output_name))
+
         return self.minio_instance.presigned_get_object(
             self.output_path.bucket,
             output_name,

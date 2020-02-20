@@ -1,9 +1,29 @@
 version : '3'
 
 services:
-  api :
-    image: api-doc2
-    env_file: app.env
+  api-doc2:
+    image: registry.dev.juniorisep.com/phoenix/api-doc2:prod
+    environment: 
+      - CONF_FILE=conf.yaml
     ports :
-      - "5001:5000"
+      - "5000:5000"
+    volumes: 
+      - ./compose-conf.yaml:/api/conf.yaml
     restart: unless-stopped
+    depends_on:
+      - word-engine
+      - excel-engine
+
+  word-engine:
+    image: registry.dev.juniorisep.com/phoenix/publiposting-services/word-publiposting:prod
+    expose: 
+      - 5000
+    restart: unless-stopped
+
+  excel-engine:
+    image: registry.dev.juniorisep.com/phoenix/publiposting-services/excel-publiposting:prod
+    ports: 
+      - 4000
+    restart: unless-stopped
+
+  

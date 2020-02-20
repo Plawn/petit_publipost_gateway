@@ -5,3 +5,6 @@ __pycache__/
 *.DS_Store
 res.docx
 *.docx
+node_modules
+excel_build
+modules
