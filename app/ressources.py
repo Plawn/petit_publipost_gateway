@@ -4,6 +4,7 @@ import os
 from .template_db import MinioCreds, TemplateDB
 from typing import Dict
 import shutil
+import threading
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
@@ -37,6 +38,7 @@ minio_creds = MinioCreds(
 
 engine_settings = settings['engine_settings']
 
+db_is_loaded = False
 
 template_db = TemplateDB(
     manifest,
@@ -45,3 +47,11 @@ template_db = TemplateDB(
     TEMP_DIR,
     minio_creds
 )
+
+def load_db():
+    template_db.full_init()
+    db_is_loaded = True
+
+
+t = threading.Thread(target=load_db)
+t.start()

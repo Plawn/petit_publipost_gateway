@@ -38,6 +38,8 @@ class TemplateDB:
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
+
+    def full_init(self):
         self.__init_engines()
         self.init()
 
