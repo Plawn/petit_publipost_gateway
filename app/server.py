@@ -25,7 +25,7 @@ from typing import Dict, Union
 import yaml
 from flask import Flask, jsonify, request
 
-from .ressources import TEMP_DIR, template_db
+from .ressources import TEMP_DIR, template_db, db_is_loaded
 from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict
 
 app = Flask(__name__)
@@ -92,6 +92,12 @@ def publipost_document():
         'url': template_db.render_template(_type, document_name, data, filename)
     })
 
+
 @app.route('/live', methods=['GET'])
 def live():
     return 'OK', 200
+
+
+@app.route('/is_db_loaded', methods=['GET'])
+def is_db_loaded():
+    return jsonify({'loaded': is_db_loaded})
