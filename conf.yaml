@@ -17,4 +17,4 @@ manifest:
   new-templates:
     output_bucket: new-output
     # thats the name under which the document will be accessible
-    type: mission
+    type: phoenix
