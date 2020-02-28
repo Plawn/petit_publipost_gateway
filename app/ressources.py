@@ -50,7 +50,7 @@ template_db = TemplateDB(
 
 def load_db():
     template_db.full_init()
-    # db_is_loaded = True
+    db_is_loaded = True
 
 
 t = threading.Thread(target=load_db)
