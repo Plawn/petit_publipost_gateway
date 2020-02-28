@@ -39,10 +39,13 @@ class TemplateDB:
         self.time_delta = time_delta
         self.engine_settings = engine_settings
         self.engines = None
+        self.loading = True
 
     def full_init(self):
+        self.loading = True
         self.__init_engines()
         self.init()
+        self.loading = False
 
     def __init_engines(self):
         self.engines = self.__init_template_servers()
