@@ -26,19 +26,29 @@ import yaml
 from flask import Flask, jsonify, request
 
 from .ressources import TEMP_DIR, template_db, db_is_loaded
-from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict
+from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine
 
 app = Flask(__name__)
 
 
-# daw working
+def using_loaded_db(func):
+    def f(*args, **kwargs):
+        if not db_is_loaded:
+            return jsonify({'error': 'db is not loaded'})
+        return func(*args, **kwargs)
+    return f
+
+
+
 @app.route('/document', methods=['GET'])
+@using_loaded_db
 def get_all():
     return jsonify(template_db.to_json())
 
 
-# das working
+
 @app.route('/document/<_type>', methods=['GET'])
+@using_loaded_db
 def get_all_documents_from_type(_type: str):
     if _type in template_db.templators:
         return jsonify(template_db.templators[_type].to_json())
@@ -46,8 +56,8 @@ def get_all_documents_from_type(_type: str):
         return jsonify({'error': 'Type not found'}), 404
 
 
-# das working
 @app.route('/document/<_type>/<name>', methods=['GET'])
+@using_loaded_db
 def get_fields_document(_type: str, name: str):
     # check if type exists
     if _type in template_db.templators:
@@ -60,14 +70,27 @@ def get_fields_document(_type: str, name: str):
 
 
 # das working
+@app.route('/reload/<templator_name>/<name>', methods=['GET'])
+def reload_document(templator_name: str, name: str):
+    try:
+        if name == 'all':
+            template_db.templators[templator_name].pull_templates()
+        else:
+            # should be full name
+            # ex: DDE.docx
+            template_db.templators[templator_name].pull_template(name)
+        return jsonify({'error': False})
+    except:
+        return jsonify({'error': traceback.format_exc()}), 500
+
+
 @app.route('/reload', methods=['GET'])
-def reload_document():
+def reload_all_documents():
     try:
         template_db.init()
         return jsonify({'error': False})
     except:
         return jsonify({'error': traceback.format_exc()}), 500
-
 
 # das working
 # data sould of the form :
@@ -82,6 +105,7 @@ def reload_document():
 #           }
 # }
 @app.route('/publipost', methods=['POST'])
+@using_loaded_db
 def publipost_document():
     form: Dict[str, Union[str, Dict[str, str]]] = request.get_json()
     _type: str = form['type']
@@ -100,4 +124,12 @@ def live():
 
 @app.route('/is_db_loaded', methods=['GET'])
 def is_db_loaded():
-    return jsonify({'loaded': is_db_loaded})
+    return jsonify({'loaded': db_is_loaded})
+
+
+@app.route("/status", methods=['GET'])
+def status():
+    d = {}
+    for engine in template_engine.template_engines.keys():
+        d[engine] = engine in template_db.engines
+    return jsonify(d)
