@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
-from .utils import ThisFallbackAction
+from .utils import MissingPlaceholderFallbackAction
 
 
 class SyntaxtKit:
@@ -28,7 +28,7 @@ class Model:
         self.syntax: SyntaxtKit = syntax_kit
         self.structure = None
         self.replacer = replacer
-        self.fallback_action = ThisFallbackAction(
+        self.fallback_action = MissingPlaceholderFallbackAction(
             FIELD_NAME_OPTION, self.replacer)
         self.fields = utils.prepare_names((i[0] for i in strings_and_info))
         self.load(strings_and_info, self.replacer)
@@ -68,6 +68,10 @@ class Model:
                     if i != end:
                         d[item] = {}
                     else:
+                        # this is kinda over-kill and not really used for the moment
+                        # if this gets to complicated just remove the PREV_TOKEN, INFO_FIELD_NAME options 
+                        # but keep the FIELD_NAME_OPTION it's used and very important
+                        # Strings and infos could le loaded from a json file located with the file
                         if not PREV_TOKEN in infos:
                             d[item] = {
                                 FIELD_NAME_OPTION: f'{self.syntax.start}{replacer.to_doc(string)}{self.syntax.end}',
@@ -76,7 +80,8 @@ class Model:
                         else:
                             del infos[PREV_TOKEN]
                             d[item] = {
-                                FIELD_NAME_OPTION: f'{self.syntax.start}{replacer.to_doc(string)}{self.syntax.end}'}
+                                FIELD_NAME_OPTION: f'{self.syntax.start}{replacer.to_doc(string)}{self.syntax.end}'
+                            }
                             if INFO_FIELD_NAME not in last_node[last_prev]:
                                 last_node[last_prev] = {INFO_FIELD_NAME: infos}
                             else:

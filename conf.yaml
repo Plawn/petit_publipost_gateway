@@ -1,8 +1,8 @@
 # should be imported from the minio creds conf file
 
-MINIO_HOST: documents.juniorisep.com
-MINIO_KEY: minio
-MINIO_PASS: 4wsLZmoo0UMdI5RcdiyNv6St
+MINIO_HOST: documents.staging.juniorisep.com
+MINIO_KEY: adminadmin
+MINIO_PASS: adminadmin
 SECURE: true
 
 engine_settings:
@@ -15,6 +15,6 @@ engine_settings:
 
 manifest:
   new-templates:
-    output_bucket: new-output
+    output_bucket: temporary
     # thats the name under which the document will be accessible
-    type: mission
+    type: phoenix

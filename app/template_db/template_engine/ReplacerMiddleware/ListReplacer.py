@@ -2,7 +2,7 @@ from .BaseReplacer import BaseReplacer
 from ..constants import PREV_TOKEN
 import re
 
-
+# have to admit that, this is ugly
 class ListReplacer(BaseReplacer):
     # I and T are used to delimit our stuff
     regex = re.compile(r'II(.*)II')

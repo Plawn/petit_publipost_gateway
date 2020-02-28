@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Tuple, Set, Iterable
 
 from ..ReplacerMiddleware import MultiReplacer
 
@@ -13,12 +13,16 @@ class FallbackAction:
 
 
 # ugly name i know
-class ThisFallbackAction(FallbackAction):
+class MissingPlaceholderFallbackAction(FallbackAction):
     def __init__(self, field_name: str, replacer: MultiReplacer):
         super().__init__(field_name, replacer)
         self.replacer = replacer
 
     def prepare_fallback(self, _dict: dict, key: str) -> None:
+        """
+        Prevents error by recreating the missing keys in the input data, 
+        we won't have missing fields so we can avoid errors and let the placeholder in place
+        """
         new_key = self.replacer.to_doc(key)
         _dict[new_key] = _dict[key][self.field_name]
         if key != new_key:
@@ -70,7 +74,7 @@ def prepare_name(string: str) -> Tuple[str, str]:
     return top_level, '.'.join(other_level)
 
 
-def prepare_names(strings) -> Dict[str, List[str]]:
+def prepare_names(strings: Iterable[str]) -> Dict[str, List[str]]:
     d: Dict[str, Set[str]] = {}
     for string in strings:
         top_level, rest = prepare_name(string)
@@ -92,7 +96,6 @@ def from_strings_to_dict(data: Dict[str, str]):
             }
         }
     }
-    This way we will merge the model with the input in order to ensure that placeholder are replaced with what we want
     """
     res = {}
     for key, value in data.items():
