@@ -126,7 +126,7 @@ def live():
 
 @app.route('/is_db_loaded', methods=['GET'])
 def is_db_loaded():
-    return jsonify({'loaded': db_is_loaded})
+    return jsonify({'loaded': template_db.loading})
 
 
 @app.route("/status", methods=['GET'])
