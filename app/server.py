@@ -25,7 +25,7 @@ from typing import Dict, Union
 import yaml
 from flask import Flask, jsonify, request
 
-from .ressources import TEMP_DIR, template_db, db_is_loaded
+from .ressources import TEMP_DIR, template_db
 from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine
 
 app = Flask(__name__)
@@ -34,8 +34,8 @@ app = Flask(__name__)
 def using_loaded_db(func):
     name = func.__name__
     def f(*args, **kwargs):
-        if not db_is_loaded:
-            return jsonify({'error': 'db is not loaded'})
+        if template_db.loading:
+            return jsonify({'error': 'db is not loaded'}), 400
         return func(*args, **kwargs)
     f.__name__ = name
     return f
