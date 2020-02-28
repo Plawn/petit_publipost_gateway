@@ -38,12 +38,15 @@ class TemplateDB:
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
+        self.engines = None
+
+    def full_init(self):
         self.__init_engines()
         self.init()
 
     def __init_engines(self):
-        engines = self.__init_template_servers()
-        self.__init_templators(engines)
+        self.engines = self.__init_template_servers()
+        self.__init_templators()
 
     def init(self):
         for templator in self.templators.values():
@@ -76,7 +79,7 @@ class TemplateDB:
                     f'Invalid env for handler "{name}" | missing keys {missing}')
         return available_engines
 
-    def __init_templators(self, engines: Dict[str, TemplateEngine]):
+    def __init_templators(self):
         for bucket_name, settings in self.manifest.items():
             try:
                 self.templators[settings['type']] = Templator(
@@ -87,7 +90,7 @@ class TemplateDB:
                     self.time_delta,
                     BASE_REPLACER,
                     self.engine_settings,
-                    engines
+                    self.engines
                 )
             except Exception as e:
                 error_printer(e.__str__())

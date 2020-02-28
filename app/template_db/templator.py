@@ -52,6 +52,8 @@ class Templator:
 
         self.__init_cache()
 
+
+    # should be deprecated too
     def __init_cache(self):
         # removing cache on startup
         if os.path.exists(self.local_template_directory):
@@ -59,33 +61,44 @@ class Templator:
         os.mkdir(self.local_template_directory)
         os.mkdir(self.temp_folder)
 
+
+    def pull_template(self, filename:str) -> None:
+        """Downloading and caching one template from Minio
+        """
+        try:
+            name, ext = from_filename(filename)
+            # there is no need for local_filename now that all the engines are remote
+            local_filename = os.path.join(
+                self.local_template_directory, filename)
+            pull_infos = PullInformations(local_filename, MinioPath(
+                self.remote_template_bucket, filename), self.minio_instance)
+            template = self.available_engines[ext](
+                pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
+            self.templates[name] = template
+            if self.verbose:
+                success_printer(
+                    f'\t- Successfully imported "{name}" using {template}')
+        except Exception as err:
+            # import traceback
+            # traceback.print_exc()
+            error_printer(
+                f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
+
     def pull_templates(self):
         """Downloading and caching all templates from Minio
         """
         if self.verbose:
             info_printer(
-                f'Importing template from bucket "{self.remote_template_bucket}"')
+                f'Importing templates from bucket "{self.remote_template_bucket}"')
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
             self.remote_template_bucket))
         for filename in filenames:
-            try:
-                name, ext = from_filename(filename)
-                local_filename = os.path.join(
-                    self.local_template_directory, filename)
-                pull_infos = PullInformations(local_filename, MinioPath(
-                    self.remote_template_bucket, filename), self.minio_instance)
-                templator = self.available_engines[ext](
-                    pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
-                self.templates[name] = templator
-                if self.verbose:
-                    success_printer(
-                        f'\t- Successfully imported "{name}" using {templator}')
-            except Exception as err:
-                # import traceback
-                # traceback.print_exc()
-                error_printer(
-                    f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
+            self.pull_template(filename)
+        
+        if self.verbose:
+            info_printer(
+                f'Import finished for bucket "{self.remote_template_bucket}"')
 
     def to_json(self):
         return {
