@@ -32,10 +32,12 @@ app = Flask(__name__)
 
 
 def using_loaded_db(func):
+    name = func.__name__
     def f(*args, **kwargs):
         if not db_is_loaded:
             return jsonify({'error': 'db is not loaded'})
         return func(*args, **kwargs)
+    f.__name__ = name
     return f
 
 
