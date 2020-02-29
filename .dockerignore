@@ -1,10 +1,8 @@
 temp
 tests
-# *.sh
+*.sh
 *README*
 .gitlab-ci.yml
 *.env
 docker-compose.yaml
-excel_build
-node_modules
-modules
+
