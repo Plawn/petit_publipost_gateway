@@ -103,6 +103,5 @@ class DocxTemplator(TemplateEngine):
             'output_name': path.filename,
         }
         res = json.loads(requests.post(self.url + '/publipost', json=data).text)
-        print(res)
         if res['error']:
             raise Exception('An error has occured')
