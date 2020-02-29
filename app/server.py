@@ -33,6 +33,7 @@ app = Flask(__name__)
 
 def using_loaded_db(func):
     name = func.__name__
+
     def f(*args, **kwargs):
         if template_db.loading:
             return jsonify({'error': 'db is not loaded'}), 400
@@ -41,12 +42,10 @@ def using_loaded_db(func):
     return f
 
 
-
 @app.route('/document', methods=['GET'])
 @using_loaded_db
 def get_all():
     return jsonify(template_db.to_json())
-
 
 
 @app.route('/document/<_type>', methods=['GET'])
@@ -76,12 +75,14 @@ def get_fields_document(_type: str, name: str):
 def reload_document(templator_name: str, name: str):
     try:
         if name == 'all':
-            template_db.templators[templator_name].pull_templates()
+            successes, fails = template_db.templators[templator_name].pull_templates()
+            return jsonify({'error': False})
         else:
             # should be full name
             # ex: DDE.docx
-            template_db.templators[templator_name].pull_template(name)
-        return jsonify({'error': False})
+            return jsonify(template_db.templators[templator_name].pull_template(name))
+    except KeyError as e:
+        return jsonify({'error': f'Template not found {e.__str__()}'}), 400
     except:
         return jsonify({'error': traceback.format_exc()}), 500
 
@@ -94,18 +95,7 @@ def reload_all_documents():
     except:
         return jsonify({'error': traceback.format_exc()}), 500
 
-# das working
-# data sould of the form :
-# {
-#   $type1 : {
-#           $field_name1 : $value1,
-#           $field_name2 : $value2,
-#           }
-#   $type2 : {
-#           $field_name1 : $value1,
-#           $field_name2 : $value2,
-#           }
-# }
+
 @app.route('/publipost', methods=['POST'])
 @using_loaded_db
 def publipost_document():
@@ -131,7 +121,4 @@ def is_db_loaded():
 
 @app.route("/status", methods=['GET'])
 def status():
-    d = {}
-    for engine in template_engine.template_engines.keys():
-        d[engine] = engine in template_db.engines
-    return jsonify(d)
+    return jsonify({engine: (engine in template_db.engines) for engine in template_engine.template_engines.keys()})

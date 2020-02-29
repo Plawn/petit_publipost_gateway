@@ -1,17 +1,17 @@
 import datetime
 import os
 import shutil
-from typing import Dict
 import uuid
-import minio
-from typing import Tuple
-import Fancy_term as term
-from .template_engine import template_engines, TemplateEngine
-from .template_engine.ReplacerMiddleware import MultiReplacer
-from .minio_creds import MinioPath, PullInformations
-from .utils import error_printer, success_printer, info_printer
-from .template_engine.model_handler.utils import change_keys
+from typing import Dict, List, Tuple
 
+import Fancy_term as term
+import minio
+
+from .minio_creds import MinioPath, PullInformations
+from .template_engine import TemplateEngine, template_engines
+from .template_engine.model_handler.utils import change_keys
+from .template_engine.ReplacerMiddleware import MultiReplacer
+from .utils import error_printer, info_printer, success_printer
 
 TEMP_FOLDER = 'temp'
 
@@ -46,7 +46,6 @@ class Templator:
         self.engine_settings = engine_settings
         self.temp_folder = os.path.join(
             self.local_template_directory, TEMP_FOLDER)
-        # placeholder
         self.verbose = True
         self.available_engines: Dict[str, TemplateEngine] = available_engines
 
@@ -61,8 +60,7 @@ class Templator:
         os.mkdir(self.local_template_directory)
         os.mkdir(self.temp_folder)
 
-
-    def pull_template(self, filename:str) -> None:
+    def pull_template(self, filename: str) -> List[str]:
         """Downloading and caching one template from Minio
         """
         try:
@@ -78,13 +76,15 @@ class Templator:
             if self.verbose:
                 success_printer(
                     f'\t- Successfully imported "{name}" using {template}')
+            return template.get_fields()
         except Exception as err:
             # import traceback
             # traceback.print_exc()
             error_printer(
                 f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
+            raise
 
-    def pull_templates(self):
+    def pull_templates(self) -> Tuple[List[str], List[str]]:
         """Downloading and caching all templates from Minio
         """
         if self.verbose:
@@ -93,12 +93,18 @@ class Templator:
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
             self.remote_template_bucket))
+        successes, fails = [], []
         for filename in filenames:
-            self.pull_template(filename)
-        
+            try:
+                self.pull_template(filename)
+                successes.append(filename)
+            except:
+                fails.append(filename)
+
         if self.verbose:
             info_printer(
                 f'Import finished for bucket "{self.remote_template_bucket}"')
+        return successes, fails
 
     def to_json(self):
         return {
