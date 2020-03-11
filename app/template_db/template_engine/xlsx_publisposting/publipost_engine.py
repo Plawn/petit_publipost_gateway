@@ -47,9 +47,8 @@ class XlsxTemplator(TemplateEngine):
         }
         res = json.loads(requests.post(url + '/configure',
                                        json=data).text)
-
-    def apply_template(self, data):
-        raise Exception('not available on this type')
+        if res['error']:
+            raise
 
     def render_to(self, data: dict, path: MinioPath) -> None:
         data = {

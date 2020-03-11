@@ -34,10 +34,6 @@ class TemplateEngine(ABC):
         self.replacer = replacer
 
     @abstractmethod
-    def apply_template(self, data: Dict[str, str]) -> Template:
-        pass
-
-    @abstractmethod
     def render_to(self, data: Dict[str, str], filename: str) -> None:
         pass
 

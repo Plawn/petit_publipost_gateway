@@ -1,5 +1,5 @@
 from typing import Tuple
-
+from dataclasses import dataclass
 
 class BaseReplacer:
     def from_doc(self, text: str) -> Tuple[str, dict]:
@@ -8,8 +8,7 @@ class BaseReplacer:
     def to_doc(self, text: str) -> str:
         return text
 
-
+@dataclass
 class ReplacerData:
-    def __init__(self, doc_side: str, other_side: str):
-        self.doc_side = doc_side
-        self.other_side = other_side
+    doc_side:str
+    other_side:str
