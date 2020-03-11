@@ -2,7 +2,7 @@ version : '3'
 
 services:
   api-doc2:
-    image: registry.dev.juniorisep.com/phoenix/api-doc2:prod
+    image: registry.dev.juniorisep.com/phoenix/api-doc2:staging
     environment: 
       - CONF_FILE=conf.yaml
     ports :
@@ -15,13 +15,13 @@ services:
       - excel-engine
 
   word-engine:
-    image: registry.dev.juniorisep.com/phoenix/publiposting-services/word-publiposting:prod
+    image: registry.dev.juniorisep.com/phoenix/publiposting-services/word-publiposting:staging
     expose: 
       - 5000
     restart: unless-stopped
 
   excel-engine:
-    image: registry.dev.juniorisep.com/phoenix/publiposting-services/excel-publiposting:prod
+    image: registry.dev.juniorisep.com/phoenix/publiposting-services/excel-publiposting:staging
     ports: 
       - 4000
     restart: unless-stopped
