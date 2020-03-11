@@ -5,4 +5,4 @@ tests
 .gitlab-ci.yml
 *.env
 docker-compose.yaml
-
+docs
