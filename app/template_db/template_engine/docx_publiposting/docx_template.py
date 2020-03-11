@@ -88,12 +88,6 @@ class DocxTemplator(TemplateEngine):
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()
 
-    def apply_template(self, data: Dict[str, str]) -> None:
-        """
-        Applies the data to the template and returns a `Template`
-        """
-
-        raise
 
     def render_to(self, data: Dict[str, str], path: MinioPath) -> None:
         data = {
@@ -103,6 +97,5 @@ class DocxTemplator(TemplateEngine):
             'output_name': path.filename,
         }
         res = json.loads(requests.post(self.url + '/publipost', json=data).text)
-        print(res)
         if res['error']:
             raise Exception('An error has occured')
