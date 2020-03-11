@@ -20,68 +20,48 @@ $ pip install -r requirements.txt
 
 ## Summary
 
-Better
+Pourquoi api-doc2 ?
 
----
+api-doc l'ancienne api de publipostage de phoenix permettait de publiposter des documents word mais était limité dans ce qu'elle pouvait faire. On ne pouvait publiposter qu'un seul type de valeurs, des missions.
 
-Grills and bois it has finally arrived 
-We have the new version of api-doc
+De plus l'api ne supportait pas le caching ce qui baissait ses performances.
 
-WHY ? :
-* Harder
-* Faster
-* Stronger
+## Qu'est ce que c'est ?
 
-For real tho:
+api-doc2 c'est une gateway qui permet à phoenix-api de publiposter n'importe quel type de document sans avoir à faire de différence.
 
-* Will be able to make <span style="color:orange;">**TABLES**</span> !!
-* Now support types WHICH MEANS that we'll soon be able to make <span style="color:orange;">REM's</span> and <span style="color:orange;">CET's</span>
+api-doc2 utilise donc des moteurs de rendu accessible sur le reseau
 
+Ces moteurs sont donc disponibles au moyen de requêtes HTTP et il est ainsi très simple d'ajouter un nouveau moteur pour support un nouveau type de document.
 
-## How to transition ?
+Les moteurs vont directement tapper dans minio pour pull les templates et pousser les résultats des rendus.
 
-### Change the POST request
+## Pour publiposter
+
+On poste sur : '/publipost'
 
 Example
 
-```python
+```json
  {
-    'data':  {
-        'mission': {
-            'contact': {
-                'civility': {
-                    'value': 'JEB'
-                }
-            }
+    "data":  {
+        "mission": {
+            "contact.civility.value":"JEB",
+            "contact.name":"Test",
         },
-        'student':{
-            'name':{
-                'value':'Paul'
-            }
-        }
+        "student":{
+            "name.value":"Paul"
+        },
     },
-    'template_name': 'DDE',
-    'filename': 'test.docx',
-    'type': 'mission'
+    "template_name": "DDE",
+    "filename": "test.docx",
+    "type": "phoenix"
 }
 ```
 #### `data` 
 
-data is like previous data but with types now
-
-* to render `mission.contact.civility.value` you have to put it under the `mission.contact.civility.value` key
-
-Which means that now you can just deserialize the data from the db to that api
-
-You can now render :
-
-`student.name.value`
-
-`mission.name.value`
-
-without breaking a sweat
-
-Just think about bringing the easyness to a new level !
+Sous cette clef on va mettre les données à publiposter.
+Pour publiposter les données sur l'objet mission, il faut ainsi les mettre sous la clef mission.
 
 #### `template_name`
 
@@ -95,28 +75,85 @@ We will have multiple document repositories from now on, ex: (tresorerie, ...etc
 
 That's the desired filename save, that's the previous `generated_name`
 
-## Add the reload button in the Parameters directory
-
-To have a faster response time and avoid re-parsing the documents all day- everyday we now cache the results `;)`
-
-Das some phoenix-front + phoenix-back stuff
-
-
 
 
 ## `manifest`
 
-That's a config telling the app where to find repositories
-It's supposed to be stored inside the conf file
+Dans le manifeste on indique à l'api où est ce qu'elle doit prendre les templates et où est ce que ces templates doivent être exposées.
+
+
+## Pour get les placeholders
+
+On fait un get sur "/document/#nom-du-bucket/#nom-template"
+
+ça renvoie donc : 
+
+```json
+{
+    "mission": [
+        "previousDocumentReference(\"ARM\")",
+        "StudentDocRef(#student,\"REM\")",
+        "documentReference(\"AEN\")"
+    ],
+    "student": [
+        "city",
+        "address",
+        "civility.value",
+        "firstName",
+        "zipCode",
+        "lastName"
+    ],
+    "this": [
+        "reference"
+    ]
+}
+```
 
 
 ## Check the test files for more information !
 
 
-## TODO 
-
-- Add syntax for auto-table detection -> should be handled by make model -> YAS
-
-You have to specify the loop variable name to have model_auto_creation :
+## Comment ajouter un moteur
 
 
+Pour ajouter un nouveau moteur il suffit donc de l'ajouter dans le dictionnaire de handlers et d'écrire un handler.
+
+Pour écrire un handler il suffit donc d'implemnter l'interface de base et d'ajouter la configuration dans le fichier de configuration.
+
+
+## Gestion du cache
+
+
+Comme indiqué plus haut, on a maintenant du cache, ça permet de gagner du temps sur chaque query et ça évite de la charge réseau par la même occasion.
+
+Il faut donc gérer le reload du cache. ça se fait avec l'endpoint "/reload"
+
+
+## Flow général
+
+- Démarrage des moteurs
+- Démarrage de la gateway
+    - lecture de la configuration
+    - configuration des moteurs
+    - initialisation d'un groupe de template par bucket
+    - détection des templates 
+    - configuration des interfaces de templates sur chacun des moteurs en fonction de l'extension du template
+        - pull les templates par chacun des engine (excel, word)
+        - parsing des templates sur chacun des engine
+        - envoie vers la gateway des models et construction des fonctions de fallback et de remplacement sur la gateway
+    
+            // ici la gateway mets donc en cache dans chaque interface de templating les models de donnée en cache. Cela permet de ne pas query les moteurs à chaque fois que l'on veut les placeholder sur la gateway
+
+- db_loaded = True
+// à partir d'ici le système de publipostage est utilisable.
+- en faisant des queries sur /document on peut avoir les placeholder
+- en faisant des queries sur /publipost on peut publiposter des docs
+
+![](./docs/images/main.svg)
+
+
+## Pistes d'améliorations :
+
+- Changer la façon dont sont register les engines
+- Mettre à jour automatiquement le cache
+- Ajouter un moteur de PPT
