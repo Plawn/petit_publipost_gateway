@@ -7,9 +7,11 @@ Empty interfaces for static typing linting
 from abc import abstractmethod, ABC
 from .ReplacerMiddleware import MultiReplacer
 from typing import Dict, Tuple, Set, List
-from ..minio_creds import PullInformations
+from ..minio_creds import PullInformations, MinioPath
 from .model_handler import Model, SyntaxtKit
-
+from ..template_db import RenderOptions, ConfigOptions
+import requests
+import json
 
 class Template(ABC):
     @abstractmethod
@@ -33,15 +35,24 @@ class TemplateEngine(ABC):
         self.model = Model([], replacer, SyntaxtKit('', '', ''))
         self.replacer = replacer
 
-    @abstractmethod
-    def render_to(self, data: Dict[str, str], filename: str) -> None:
-        pass
+    def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
+        data = {
+            'data': data,
+            'template_name': self.pull_infos.remote.filename,
+            'output_bucket': path.bucket,
+            'output_name': path.filename,
+            'options': options.compile_options
+        }
+        res = requests.post(self.url + '/publipost', json=data)
+        error = json.loads(res.text)
+        if error['error']:
+            raise Exception('An error has occured')
 
     def to_json(self) -> dict:
         return self.model.structure
 
     @staticmethod
-    def configure(env: dict):
+    def configure(env: ConfigOptions):
         return False
 
     def get_fields(self) -> List[str]:
