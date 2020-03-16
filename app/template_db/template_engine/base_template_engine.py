@@ -41,12 +41,15 @@ class TemplateEngine(ABC):
             'template_name': self.pull_infos.remote.filename,
             'output_bucket': path.bucket,
             'output_name': path.filename,
-            'options': options.compile_options
+            'options': options.compile_options,
+            'push_result':options.push_result,
         }
         res = requests.post(self.url + '/publipost', json=data)
-        error = json.loads(res.text)
-        if error['error']:
-            raise Exception('An error has occured')
+        result = json.loads(res.text)
+        if 'error' in result:
+            if result['error']:
+                raise Exception('An error has occured')
+        return result
 
     def to_json(self) -> dict:
         return self.model.structure
