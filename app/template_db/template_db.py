@@ -1,7 +1,7 @@
 import traceback
 import json
 import os
-
+import logging
 from typing import Dict, Set, List
 
 import minio
@@ -78,11 +78,13 @@ class TemplateDB:
                 try:
                     engine.configure(settings)
                     success_printer(f'Successfuly started "{name}" handler')
+                    logging.info(f'Successfuly started "{name}" handler')
                     available_engines[name] = engine
                 except Exception as e:
                     error_printer(
                         f'Failed to start server {engine}')
                     traceback.print_exc()
+                    logging.error(traceback.format_exc())
             else:
                 error_printer(
                     f'Invalid env for handler "{name}" | missing keys {missing}')
