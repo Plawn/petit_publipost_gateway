@@ -9,6 +9,7 @@ import requests
 
 from ...minio_creds import MinioCreds, MinioPath, PullInformations
 from ..base_template_engine import TemplateEngine
+from ...template_db import RenderOptions, ConfigOptions
 from ..model_handler import Model, SyntaxtKit
 from ..ReplacerMiddleware import MultiReplacer
 from . import utils
@@ -23,6 +24,8 @@ class Settings:
     secure: bool
 
 # placeholder for now
+
+
 def add_infos(_dict: dict) -> None:
     """Will add infos to the field on the fly
     """
@@ -49,9 +52,9 @@ class DocxTemplator(TemplateEngine):
         self.init()
 
     @staticmethod
-    def configure(env: dict):
-        settings = env['env']
-        creds: MinioCreds = env['minio']
+    def configure(env: ConfigOptions):
+        settings = env.env
+        creds: MinioCreds = env.minio
         url = f"http{'s' if settings['secure'] else ''}://{settings['host']}"
         data = {
             'host': creds.host,
@@ -87,15 +90,3 @@ class DocxTemplator(TemplateEngine):
         if len(res['success']) < 1:
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()
-
-
-    def render_to(self, data: Dict[str, str], path: MinioPath) -> None:
-        data = {
-            'data': data,
-            'template_name': self.pull_infos.remote.filename,
-            'output_bucket': path.bucket,
-            'output_name': path.filename,
-        }
-        res = json.loads(requests.post(self.url + '/publipost', json=data).text)
-        if res['error']:
-            raise Exception('An error has occured')

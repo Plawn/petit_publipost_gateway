@@ -1,19 +1,21 @@
 import traceback
 import json
 import os
-
-from typing import Dict, Set
+import logging
+from typing import Dict, Set, List
 
 import minio
-
+from .data_objects import RenderOptions, ConfigOptions
 from .template_engine.ReplacerMiddleware import (FuncReplacer,
                                                  MultiReplacer)
 from .template_engine import template_engines, TemplateEngine
 from .minio_creds import MinioCreds, MinioPath
+from .template_engine.model_handler.utils import from_strings_to_dict
 from .templator import Templator
 from .utils import success_printer, error_printer
 from datetime import timedelta
 import subprocess
+
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
@@ -55,28 +57,29 @@ class TemplateDB:
         for templator in self.templators.values():
             templator.pull_templates()
 
-    def render_template(self, _type: str, name: str, data: Dict[str, str],  output: str):
-        return self.templators[_type].render(name, data, output)
+    def render_template(self, _type: str, name: str, data: Dict[str, str],  output: str, options: RenderOptions):
+        # with this we can avoid transforming the data if we want to
+        if options.transform_data:
+            data: Dict[str, Dict[str, str]] = from_strings_to_dict(data)
+        return self.templators[_type].render(name, data, output, options)
 
     def __init_template_servers(self) -> None:
         available_engines: Dict[str, TemplateEngine] = {}
         for name, engine in template_engines.items():
             env = self.engine_settings[name]
             ok, missing = engine.check_env(env)
-            # TODO : should make an object using a dataclass
-            settings = {
-                'env': env,
-                'minio': self.minio_creds
-            }
+            settings = ConfigOptions(env, self.minio_creds)
             if ok:
                 try:
                     engine.configure(settings)
                     success_printer(f'Successfuly started "{name}" handler')
+                    logging.info(f'Successfuly started "{name}" handler')
                     available_engines[name] = engine
                 except Exception as e:
                     error_printer(
                         f'Failed to start server {engine}')
                     traceback.print_exc()
+                    logging.error(traceback.format_exc())
             else:
                 error_printer(
                     f'Invalid env for handler "{name}" | missing keys {missing}')
