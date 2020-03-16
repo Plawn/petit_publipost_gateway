@@ -1,3 +1,4 @@
+import logging
 import datetime
 import os
 import shutil
@@ -77,11 +78,12 @@ class Templator:
             if self.verbose:
                 success_printer(
                     f'\t- Successfully imported "{name}" using {template}')
+                logging.info(f'\t- Successfully imported "{name}" using {template}')
             return template.get_fields()
         except Exception as err:
             # import traceback
             # traceback.print_exc()
-            error_printer(
+            logging.error(
                 f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
             raise
 
@@ -91,6 +93,8 @@ class Templator:
         if self.verbose:
             info_printer(
                 f'Importing templates from bucket "{self.remote_template_bucket}"')
+                
+        logging.info(f'Importing templates from bucket "{self.remote_template_bucket}"')
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
             self.remote_template_bucket))
@@ -105,6 +109,7 @@ class Templator:
         if self.verbose:
             info_printer(
                 f'Import finished for bucket "{self.remote_template_bucket}"')
+        logging.info(f'Import finished for bucket "{self.remote_template_bucket}"')
         return successes, fails
 
     def to_json(self):
