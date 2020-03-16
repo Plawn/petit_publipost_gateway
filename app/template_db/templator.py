@@ -9,12 +9,13 @@ import minio
 
 from .minio_creds import MinioPath, PullInformations
 from .template_engine import TemplateEngine, template_engines
+from .template_db import RenderOptions
 from .template_engine.model_handler.utils import change_keys
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .utils import error_printer, info_printer, success_printer
 
 TEMP_FOLDER = 'temp'
-
+ENSURE_KEYS = 'ensure_keys'
 
 def from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
@@ -51,8 +52,8 @@ class Templator:
 
         self.__init_cache()
 
-
     # should be deprecated too
+
     def __init_cache(self):
         # removing cache on startup
         if os.path.exists(self.local_template_directory):
@@ -111,16 +112,24 @@ class Templator:
             name: template.get_fields() for name, template in self.templates.items()
         }
 
-    def render(self, template_name: str, data: Dict[str, str], output_name: str) -> str:
+    def render(self, template_name: str, data: Dict[str, str], output_name: str, options: RenderOptions) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
 
         engine = self.templates[template_name]
 
-        data = change_keys(engine.model.merge(data), engine.replacer.to_doc)
-        engine.render_to(
-            data, MinioPath(self.output_path.bucket, output_name))
+        # to know if we want to ensure_keys or have an error
+        ensure_keys = ENSURE_KEYS in options.compile_options
 
-        return self.minio_instance.presigned_get_object(
-            self.output_path.bucket,
-            output_name,
-            expires=self.time_delta)
+        data = change_keys(engine.model.merge(
+            data, ensure_keys), engine.replacer.to_doc)
+
+        result = engine.render_to(
+            data, MinioPath(self.output_path.bucket, output_name), options)
+
+        if options.push_result:
+            return self.minio_instance.presigned_get_object(
+                self.output_path.bucket,
+                output_name,
+                expires=self.time_delta)
+        else:
+            return result

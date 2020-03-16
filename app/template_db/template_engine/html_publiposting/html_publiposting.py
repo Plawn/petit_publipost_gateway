@@ -7,9 +7,9 @@ import json
 from dataclasses import dataclass
 from ...template_db import RenderOptions, ConfigOptions
 
-EXT = '.xlsx'
+EXT = '.html'
 
-SYNTAX_KIT = SyntaxtKit('${', '}', '.')
+SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
 
 @dataclass
@@ -38,8 +38,8 @@ class XlsxTemplator(TemplateEngine):
 
     @staticmethod
     def configure(env: ConfigOptions):
-        settings = env.env
-        creds = env.minio
+        settings = env['env']
+        creds: MinioCreds = env['minio']
         url = f"http{'s' if settings['secure']else ''}://{settings['host']}"
         data = {
             'endpoint': creds.host,

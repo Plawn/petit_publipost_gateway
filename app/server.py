@@ -2,17 +2,6 @@
 REQUIRES CONF_FILE to be set to the configuration file
 it must be a yaml and include
 
-
-MINIO_HOST": "<host>"
-MINIO_KEY": "<>"
-MINIO_PASS": "<>"
-manifest: 
-    <template_bucket_name>:
-        # output bucket         
-        <output_bucket>: new-output         
-        # thats the name under which the document will be usable         
-        type: mission
-
 """
 
 import json
@@ -20,13 +9,16 @@ import os
 import shutil
 import traceback
 from datetime import timedelta
-from typing import Dict, Union
+from typing import Dict, Union, List
+from dataclasses import dataclass
 
 import yaml
 from flask import Flask, jsonify, request
 
 from .ressources import TEMP_DIR, template_db
-from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine
+from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine, RenderOptions, ENSURE_KEYS
+
+default_options = RenderOptions(True, [ENSURE_KEYS], True)
 
 app = Flask(__name__)
 
@@ -75,7 +67,8 @@ def get_fields_document(_type: str, name: str):
 def reload_document(templator_name: str, name: str):
     try:
         if name == 'all':
-            successes, fails = template_db.templators[templator_name].pull_templates()
+            successes, fails = template_db.templators[templator_name].pull_templates(
+            )
             return jsonify({'error': False})
         else:
             # should be full name
@@ -100,12 +93,17 @@ def reload_all_documents():
 @using_loaded_db
 def publipost_document():
     form: Dict[str, Union[str, Dict[str, str]]] = request.get_json()
+
     _type: str = form['type']
     document_name: str = form['template_name']
     filename: str = form['filename']
-    data: Dict[str, Dict[str, str]] = from_strings_to_dict(form['data'])
+    options:RenderOptions = form.get('options', default_options)
+    data = form['data']
+    
+    # if we want to get the result back directly we can set the push_result to False
+    # for email rendering we will use the push_result option
     return jsonify({
-        'url': template_db.render_template(_type, document_name, data, filename)
+        'result': template_db.render_template(_type, document_name, data, filename, options)
     })
 
 
@@ -121,4 +119,6 @@ def is_db_loaded():
 
 @app.route("/status", methods=['GET'])
 def status():
-    return jsonify({engine: (engine in template_db.engines) for engine in template_engine.template_engines.keys()})
+    return jsonify({
+        engine: (engine in template_db.engines) for engine in template_engine.template_engines.keys()
+    })
