@@ -18,7 +18,7 @@ from flask import Flask, jsonify, request
 from .ressources import TEMP_DIR, template_db
 from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine, RenderOptions, ENSURE_KEYS
 
-default_options = RenderOptions(True, [ENSURE_KEYS], True)
+default_options = RenderOptions(push_result=True, compile_options=[ENSURE_KEYS], transform_data=True)
 
 app = Flask(__name__)
 

@@ -10,6 +10,6 @@ class ConfigOptions:
 
 @dataclass
 class RenderOptions:
+    push_result: bool
     transform_data: bool
     compile_options: List[str]
-    push_result: bool
