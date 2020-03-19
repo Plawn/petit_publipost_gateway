@@ -1,22 +1,67 @@
 # API-DOC-2
 
-### Docker Setup
+## Docker Setup
 
 PLS mount the conf file into /api/conf.yaml
 
-### Installation
+## Installation
 
 ```sh
 $ pip install -r requirements.txt
 ```
 
-* Install the word-publiposting
-* Install the excel-publiposting
+* Installer le moteur word-publiposting
+* Installer le moteur excel-publiposting
+
+
+## Utiliser en local 
+
+### Sans docker
 
 * Start the word-publiposting with the correct port (same as the one in `conf.yaml`)
 * Start the excel-publiposting with the correct port (same as the one in `conf.yaml`)
 
+Il vous faut un fichier de configuration valide
 
+### Avec docker
+
+```sh
+$ docker-compose up
+```
+
+Il vous faut un fichier de configuration valide qui sera monté dans le volume docker
+
+## Configuration
+
+La configuration est assez simple et se déroule dans le fichier `conf.yaml`
+
+- Il suffit de mettre les variables permettant de se connecter à l'instance minio sur laquelle l'api va opérer
+- Il faut ensuite mettre sous la clef **manifest** les informations des différents bucket à exposer
+  - Les clefs de ce mapping seront le nom des buckets à exposer
+    - output_bucket : le nom du bucket de sortie
+    - tyoe : le nom sous lequel les documents seront exposés
+- renseigner où se trouvent les moteurs en fonction de leurs noms
+
+```yaml
+MINIO_HOST: ""
+MINIO_KEY: ""
+MINIO_PASS: ""
+SECURE: true
+
+engine_settings:
+  docx: 
+    host: word-engine:5000
+    secure: false
+  xlsx:
+    host: excel-engine:4000
+    secure: false
+
+manifest:
+  new-templates:
+    output_bucket: temporary # for testing purposes it's better :) 
+    # thats the name under which the document will be accessible
+    type: phoenix
+```
 
 ## Summary
 
@@ -36,7 +81,9 @@ Ces moteurs sont donc disponibles au moyen de requêtes HTTP et il est ainsi tr�
 
 Les moteurs vont directement tapper dans minio pour pull les templates et pousser les résultats des rendus.
 
-## Pour publiposter
+## Les endpoints
+
+### Pour publiposter
 
 On poste sur : '/publipost'
 
@@ -77,12 +124,7 @@ That's the desired filename save, that's the previous `generated_name`
 
 
 
-## `manifest`
-
-Dans le manifeste on indique à l'api où est ce qu'elle doit prendre les templates et où est ce que ces templates doivent être exposées.
-
-
-## Pour get les placeholders
+### Pour get les placeholders
 
 On fait un get sur "/document/#nom-du-bucket/#nom-template"
 
@@ -109,8 +151,11 @@ On fait un get sur "/document/#nom-du-bucket/#nom-template"
 }
 ```
 
+### healtcheck
 
-## Check the test files for more information !
+Sur /live ça renvoie toujours une 200 avec un body 'OK'
+
+Cela permet aux autres services qu'api-doc2 est live
 
 
 ## Comment ajouter un moteur
