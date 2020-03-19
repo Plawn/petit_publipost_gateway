@@ -23,6 +23,10 @@ $ pip install -r requirements.txt
 
 Il vous faut un fichier de configuration valide
 
+```sh
+$ ./start_dev.sh
+```
+
 ### Avec docker
 
 ```sh
