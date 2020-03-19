@@ -27,6 +27,8 @@ Il vous faut un fichier de configuration valide
 $ ./start_dev.sh
 ```
 
+Les moteurs doivent être lancer avant api-doc2 puisque api-doc2 va les configurer au démarrage
+
 ### Avec docker
 
 ```sh
