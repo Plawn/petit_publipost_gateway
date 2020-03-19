@@ -45,12 +45,12 @@ class XlsxTemplator(TemplateEngine):
             'endpoint': creds.host,
             'access_key': creds.key,
             'passkey': creds.password,
+            'secure': creds.secure,
         }
         res = json.loads(requests.post(url + '/configure',
                                        json=data).text)
         if res['error']:
             raise
-
 
     def __load_fields(self):
         res = json.loads(requests.post(self.url + '/get_placeholders',

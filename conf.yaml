@@ -1,8 +1,8 @@
 # should be imported from the minio creds conf file
 
-MINIO_HOST: ""
-MINIO_KEY: ""
-MINIO_PASS: ""
+MINIO_HOST: documents.staging.juniorisep.com
+MINIO_KEY: adminadmin
+MINIO_PASS: adminadminn
 SECURE: true
 
 engine_settings:

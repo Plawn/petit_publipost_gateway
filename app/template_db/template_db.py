@@ -35,6 +35,8 @@ class TemplateDB:
             secret_key=self.minio_creds.password,
             secure=self.minio_creds.secure
         )
+        # doing this to check if the minio instance is correct
+        self.minio_instance.list_buckets()
         self.manifest: Dict[str, Dict[str, str]] = manifest
         self.temp_folder = temp_folder
         self.templators: Dict[str, Templator] = {}

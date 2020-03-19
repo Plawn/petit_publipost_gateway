@@ -60,6 +60,7 @@ class DocxTemplator(TemplateEngine):
             'host': creds.host,
             'access_key': creds.key,
             'pass_key': creds.password,
+            'secure': creds.secure
         }
         res = json.loads(requests.post(url + '/configure',
                                        json=data).text)
