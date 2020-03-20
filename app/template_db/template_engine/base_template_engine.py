@@ -75,49 +75,41 @@ class TemplateEngine(ABC):
         return self.model.structure
 
     @classmethod
-    def configure(cls, env: ConfigOptions, ext:str) -> None:
-        if cls.__configuring:
-            raise Exception('Already geeting configured')
+    def register(cls, env: ConfigOptions, ext:str) -> None:
         cls.__configuring = True
         cls.__conf = env
         cls.ext = ext
         settings = cls.__conf.env
-
         cls.url = f"http{'s' if settings['secure'] else ''}://{settings['host']}"
-
-        if cls.__auto_check_thread is not None:
-            cls.__running = False
-            cls.__auto_check_event.set()
-
-        event = threading.Event()
-
-        def check_live():
-            while cls.__running:
-                event.wait(cls.base_check_up_time)
-                event.clear()
-                try:
-                    # print('get live', threading.get_ident())
-                    res = requests.get(cls.url + '/live')
-                    cls.__up = res.status_code < 300
-                    if not cls.__up:
-                        logging.warning(
-                            f'engine down {cls} trying to configure')
-                        cls.configure(cls.__conf, cls.ext)
-                except:
-                    cls.__up = False
-
-        cls.__running = True
-        cls.__auto_check_thread = threading.Thread(target=check_live)
-        cls.__auto_check_event = event
-
+        
+        # registering auto checker
+        try :
+            cls._configure()
+        except Exception as e:
+            logging.error(e)
+        cls.__auto_check_event = threading.Event()
+        cls.__auto_check_thread = threading.Thread(target=cls.__check_live)
         cls.__auto_check_thread.start()
-
-        cls._configure()
-
         cls.__configuring = False
 
     def get_fields(self) -> List[str]:
         return self.model.fields
+
+    @classmethod
+    def __check_live(cls):
+        print('started')
+        while True:
+            cls.__auto_check_event.wait(cls.base_check_up_time)
+            try:
+                res = requests.get(cls.url + '/live')
+                cls.__up = res.status_code < 300
+                if not cls.__up:
+                    logging.warning(
+                        f'engine up but not configured {cls.__name__} -> trying to configure')
+                    cls._configure()
+            except:
+                logging.error(f'engine is down {cls.__name__}')
+                cls.set_down()
 
     @classmethod
     def _re_register_templates(cls):

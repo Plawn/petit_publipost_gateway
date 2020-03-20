@@ -66,6 +66,8 @@ class DocxTemplator(TemplateEngine):
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
+        if not self._TemplateEngine__up:
+            raise Exception('Engine down')
         self.url = f"http{'s' if self.settings.secure else ''}://{self.settings.host}"
         res = json.loads(requests.post(self.url + '/load_templates', json=[
             {

@@ -73,7 +73,7 @@ class TemplateDB:
             settings = ConfigOptions(env, self.minio_creds)
             if ok:
                 try:
-                    engine.configure(settings, name)
+                    engine.register(settings, name)
                     logging.info(f'Successfuly registered "{name}" handler')
                 except Exception as e:
                     error_printer(
