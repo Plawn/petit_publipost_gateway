@@ -1,3 +1,4 @@
+import traceback
 import logging
 import datetime
 import os
@@ -72,17 +73,18 @@ class Templator:
                 self.local_template_directory, filename)
             pull_infos = PullInformations(local_filename, MinioPath(
                 self.remote_template_bucket, filename), self.minio_instance)
-            template = self.available_engines[ext](
-                pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
-            self.templates[name] = template
-            if self.verbose:
-                success_printer(
-                    f'\t- Successfully imported "{name}" using {template}')
-                logging.info(f'\t- Successfully imported "{name}" using {template}')
-            return template.get_fields()
+            if ext in self.available_engines:
+                template = self.available_engines[ext](
+                    pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
+                self.templates[name] = template
+                if self.verbose:
+                    success_printer(
+                        f'\t- Successfully imported "{name}" using {template}')
+                    logging.info(f'\t- Successfully imported "{name}" using {template}')
+                return template.get_fields()
+            else:
+                logging.error('Engine not available')
         except Exception as err:
-            import traceback
-            traceback.print_exc()
             logging.error(
                 f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
             logging.error(traceback.format_exc())

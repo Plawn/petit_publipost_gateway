@@ -25,7 +25,7 @@ except:
     raise Exception('missing "CONF_FILE" env')
 
 with open(conf_filename, 'r') as f:
-    settings: Dict[str, object] = yaml.load(f)
+    settings: Dict[str, object] = yaml.safe_load(f)
 
 manifest = settings[MANIFEST_TOKEN]
 

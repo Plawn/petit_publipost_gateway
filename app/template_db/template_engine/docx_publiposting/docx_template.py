@@ -38,6 +38,7 @@ class DocxTemplator(TemplateEngine):
     requires_env = []
 
     def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+        DocxTemplator.registered_templates.append(self)
 
         self.pull_infos = pull_infos
 
@@ -50,22 +51,6 @@ class DocxTemplator(TemplateEngine):
         self.temp_dir = temp_dir
         self.url: str = None
         self.init()
-
-    @staticmethod
-    def configure(env: ConfigOptions):
-        settings = env.env
-        creds: MinioCreds = env.minio
-        url = f"http{'s' if settings['secure'] else ''}://{settings['host']}"
-        data = {
-            'host': creds.host,
-            'access_key': creds.key,
-            'pass_key': creds.password,
-            'secure': creds.secure
-        }
-        res = json.loads(requests.post(url + '/configure',
-                                       json=data).text)
-        if res['error']:
-            raise
 
     def __load_fields(self) -> None:
         res = json.loads(requests.post(self.url + '/get_placeholders',

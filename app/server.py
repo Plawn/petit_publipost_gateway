@@ -83,7 +83,7 @@ def reload_document(templator_name: str, name: str):
 @app.route('/reload', methods=['GET'])
 def reload_all_documents():
     try:
-        template_db.init()
+        template_db.load_templates()
         return jsonify({'error': False})
     except:
         return jsonify({'error': traceback.format_exc()}), 500
@@ -120,5 +120,5 @@ def is_db_loaded():
 @app.route("/status", methods=['GET'])
 def status():
     return jsonify({
-        engine: (engine in template_db.engines) for engine in template_engine.template_engines.keys()
+        engine: (engine in template_db.engines and template_db.engines[engine].is_up() ) for engine in template_engine.template_engines.keys()
     })
