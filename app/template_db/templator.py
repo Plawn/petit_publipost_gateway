@@ -77,6 +77,7 @@ class Templator:
                 template = self.available_engines[ext](
                     pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
                 self.templates[name] = template
+                template.init()
                 if self.verbose:
                     success_printer(
                         f'\t- Successfully imported "{name}" using {template}')

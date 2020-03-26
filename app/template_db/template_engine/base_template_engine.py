@@ -13,16 +13,11 @@ import json
 import threading
 import uuid
 import logging
+from .health_checker import HealthChecker, FailedToConfigure
 
 
-def make_token():
-    return str(uuid.uuid4())
-
-
-class Template(ABC):
-    @abstractmethod
-    def save(self, filename: str):
-        pass
+def make_url(settings: dict) -> str:
+    return f"http{'s' if settings['secure'] else ''}://{settings['host']}"
 
 
 class TemplateEngine(ABC):
@@ -30,17 +25,21 @@ class TemplateEngine(ABC):
 
     registered_templates: List[TemplateEngine] = []
     url = ''
-    ext  = ''
+    ext = ''
 
-    base_check_up_time = 30
     __conf: ConfigOptions = None
 
-    __configuring = False
-    __auto_check_thread: threading.Thread = None
-    __auto_check_event: threading.Event = None
-    __running: bool = False
+    __auto_checker: HealthChecker = None
 
-    __up: bool = False
+    # this exists only for interface purposes
+    @abstractmethod
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+        self.model = Model([], replacer, SyntaxtKit('', '', ''))
+        self.replacer = replacer
+
+    @abstractmethod
+    def init(self):
+        pass
 
     @classmethod
     def check_env(cls, env: dict) -> bool:
@@ -50,12 +49,56 @@ class TemplateEngine(ABC):
                 missing_keys.add(key)
         return len(missing_keys) == 0, missing_keys
 
-    @abstractmethod
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
-        self.model = Model([], replacer, SyntaxtKit('', '', ''))
-        self.replacer = replacer
+    @classmethod
+    def register(cls, env: ConfigOptions, ext: str) -> None:
+        cls.__conf = env
+        cls.ext = ext
+        settings = cls.__conf.env
+        cls.url = make_url(settings)
+        cls.__auto_checker = HealthChecker(
+            cls.__name__,
+            check_live=cls._check_live,
+            configure=cls._configure,
+            post_configuration=cls._re_register_templates
+        )
+
+    @classmethod
+    def _check_live(cls):
+        return requests.get(cls.url + '/live').status_code < 300
+
+    @classmethod
+    def is_up(cls) -> bool:
+        return cls.__auto_checker.is_up() if cls.__auto_checker is not None else False
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__}>'
+
+    @classmethod
+    def is_configuring(cls):
+        if cls.__auto_checker is None:
+            return True
+        return cls.__auto_checker.is_configuring()
+
+    @classmethod
+    def _configure(cls) -> None:
+        creds: MinioCreds = cls.__conf.minio
+        data = {
+            'host': creds.host,
+            'access_key': creds.key,
+            'pass_key': creds.password,
+            'secure': creds.secure,
+        }
+        res = requests.post(cls.url + '/configure', json=data)
+        if res.status_code >= 300:
+            raise FailedToConfigure
+
+    @classmethod
+    def _re_register_templates(cls):
+        for template in cls.registered_templates:
+            template.init()
 
     def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
+        # should make a dataclass here
         data = {
             'data': data,
             'template_name': self.pull_infos.remote.filename,
@@ -74,85 +117,7 @@ class TemplateEngine(ABC):
     def to_json(self) -> dict:
         return self.model.structure
 
-    @classmethod
-    def register(cls, env: ConfigOptions, ext:str) -> None:
-        cls.__configuring = True
-        cls.__conf = env
-        cls.ext = ext
-        settings = cls.__conf.env
-        cls.url = f"http{'s' if settings['secure'] else ''}://{settings['host']}"
-        
-        # registering auto checker
-        try :
-            cls._configure()
-        except Exception as e:
-            logging.error(e)
-        cls.__auto_check_event = threading.Event()
-        cls.__auto_check_thread = threading.Thread(target=cls.__check_live)
-        cls.__auto_check_thread.start()
-        cls.__configuring = False
-
     def get_fields(self) -> List[str]:
-        return self.model.fields
-
-    @classmethod
-    def __check_live(cls):
-        print('started')
-        while True:
-            cls.__auto_check_event.wait(cls.base_check_up_time)
-            try:
-                res = requests.get(cls.url + '/live')
-                cls.__up = res.status_code < 300
-                if not cls.__up:
-                    logging.warning(
-                        f'engine up but not configured {cls.__name__} -> trying to configure')
-                    cls._configure()
-            except:
-                logging.error(f'engine is down {cls.__name__}')
-                cls.set_down()
-
-    @classmethod
-    def _re_register_templates(cls):
-        for template in cls.registered_templates:
-            template.init()
-
-    @classmethod
-    def is_up(cls) -> bool:
-        return cls.__up
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__}>'
-
-    @classmethod
-    def set_up(cls):
-        cls.__up = True
-
-    @classmethod
-    def set_down(cls):
-        cls.__up = False
-
-    @abstractmethod
-    def init(self):
-        pass
-
-    @classmethod
-    def _configure(cls) -> None:
-        creds: MinioCreds = cls.__conf.minio
-        data = {
-            'host': creds.host,
-            'access_key': creds.key,
-            'pass_key': creds.password,
-            'secure': creds.secure,
-        }
-        res = None
-        try:
-            res = json.loads(requests.post(cls.url + '/configure',
-                                           json=data).text)
-            cls.set_up()
-            cls._re_register_templates()
-        except:
-            if res is not None and res['error']:
-                return logging.error(f'Failed to configure "{cls.ext}" handler but server responded')                
-            return logging.error(f'Failed to connect to "{cls.ext}" handler')
-            
-        logging.info(f'Successfuly started "{cls.ext}" handler')
+        if self.model is not None and self.is_up():
+            return self.model.fields
+        return None

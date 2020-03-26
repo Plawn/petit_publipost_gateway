@@ -35,7 +35,6 @@ class XlsxTemplator(TemplateEngine):
         self.model: Model = None
         self.url: str = None
         self.settings = Settings(settings['host'], settings['secure'])
-        self._init()
 
     def __load_fields(self):
         res = json.loads(requests.post(self.url + '/get_placeholders',
@@ -43,9 +42,8 @@ class XlsxTemplator(TemplateEngine):
         res = [(i, {}) for i in res]
         self.model = Model(res, self.replacer, SYNTAX_KIT)
 
-    def _init(self):
-        self.url = f"http{'s' if self.settings.secure else ''}://{self.settings.host}"
-        res = json.loads(requests.post(self.url + '/load_templates', json=[
+    def init(self):
+        res = json.loads(requests.post(XlsxTemplator.url + '/load_templates', json=[
             {
                 'bucket_name': self.pull_infos.remote.bucket,
                 'template_name': self.pull_infos.remote.filename
