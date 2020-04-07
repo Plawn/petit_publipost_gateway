@@ -35,32 +35,34 @@ class TemplateDB:
             secret_key=self.minio_creds.password,
             secure=self.minio_creds.secure
         )
+        # doing this to check if the minio instance is correct
+        self.minio_instance.list_buckets()
         self.manifest: Dict[str, Dict[str, str]] = manifest
         self.temp_folder = temp_folder
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
-        self.engines = None
+        self.engines: Dict[str, TemplateEngine] = None
         self.loading = True
 
     def full_init(self):
         self.loading = True
         self.__init_engines()
-        self.init()
+        self.load_templates()
         self.loading = False
 
     def __init_engines(self):
         self.engines = self.__init_template_servers()
         self.__init_templators()
 
-    def init(self):
+    def load_templates(self):
         for templator in self.templators.values():
             templator.pull_templates()
 
     def render_template(self, _type: str, name: str, data: Dict[str, str],  output: str, options: RenderOptions):
         # with this we can avoid transforming the data if we want to
         if options.transform_data:
-            data: Dict[str, Dict[str, str]] = from_strings_to_dict(data)
+            data: Dict[str, object] = from_strings_to_dict(data)
         return self.templators[_type].render(name, data, output, options)
 
     def __init_template_servers(self) -> None:
@@ -71,18 +73,15 @@ class TemplateDB:
             settings = ConfigOptions(env, self.minio_creds)
             if ok:
                 try:
-                    engine.configure(settings)
-                    success_printer(f'Successfuly started "{name}" handler')
-                    logging.info(f'Successfuly started "{name}" handler')
-                    available_engines[name] = engine
+                    engine.register(settings, name)
+                    logging.info(f'Successfuly registered "{name}" handler')
                 except Exception as e:
                     error_printer(
-                        f'Failed to start server {engine}')
-                    traceback.print_exc()
+                        f'Failed to register server {engine}')
                     logging.error(traceback.format_exc())
             else:
-                error_printer(
-                    f'Invalid env for handler "{name}" | missing keys {missing}')
+                logging.error(f'Invalid env for handler "{name}" | missing keys {missing}')
+            available_engines[name] = engine
         return available_engines
 
     def __init_templators(self):

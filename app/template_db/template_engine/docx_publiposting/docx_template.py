@@ -38,6 +38,7 @@ class DocxTemplator(TemplateEngine):
     requires_env = []
 
     def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+        DocxTemplator.registered_templates.append(self)
 
         self.pull_infos = pull_infos
 
@@ -48,26 +49,9 @@ class DocxTemplator(TemplateEngine):
         # easier for now
         self.settings = Settings(settings['host'], settings['secure'])
         self.temp_dir = temp_dir
-        self.url: str = None
-        self.init()
-
-    @staticmethod
-    def configure(env: ConfigOptions):
-        settings = env.env
-        creds: MinioCreds = env.minio
-        url = f"http{'s' if settings['secure'] else ''}://{settings['host']}"
-        data = {
-            'host': creds.host,
-            'access_key': creds.key,
-            'pass_key': creds.password,
-        }
-        res = json.loads(requests.post(url + '/configure',
-                                       json=data).text)
-        if res['error']:
-            raise
 
     def __load_fields(self) -> None:
-        res = json.loads(requests.post(self.url + '/get_placeholders',
+        res = json.loads(requests.post(DocxTemplator.url + '/get_placeholders',
                                        json={'name': self.pull_infos.remote.filename}).text)
         fields: List[str] = res
         cleaned = []
@@ -80,8 +64,10 @@ class DocxTemplator(TemplateEngine):
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
-        self.url = f"http{'s' if self.settings.secure else ''}://{self.settings.host}"
-        res = json.loads(requests.post(self.url + '/load_templates', json=[
+        if not self.is_up():
+            print('not up', self.is_up())
+            raise Exception('Engine down')
+        res = json.loads(requests.post(DocxTemplator.url + '/load_templates', json=[
             {
                 'bucket_name': self.pull_infos.remote.bucket,
                 'template_name': self.pull_infos.remote.filename
