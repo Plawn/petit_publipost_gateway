@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .base_template_engine import Template, TemplateEngine
+from .base_template_engine import TemplateEngine
 from .docx_publiposting import DocxTemplator
 from .xlsx_publisposting import XlsxTemplator
 from .ReplacerMiddleware import MultiReplacer

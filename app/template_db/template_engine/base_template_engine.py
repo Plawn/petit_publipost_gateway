@@ -1,9 +1,7 @@
 """
-Empty interfaces for static typing linting
-
-
-
+Base class
 """
+from __future__ import annotations
 from abc import abstractmethod, ABC
 from .ReplacerMiddleware import MultiReplacer
 from typing import Dict, Tuple, Set, List
@@ -12,15 +10,36 @@ from .model_handler import Model, SyntaxtKit
 from ..template_db import RenderOptions, ConfigOptions
 import requests
 import json
+import threading
+import uuid
+import logging
+from .health_checker import HealthChecker, FailedToConfigure
 
-class Template(ABC):
-    @abstractmethod
-    def save(self, filename: str):
-        pass
+
+def make_url(settings: dict) -> str:
+    return f"http{'s' if settings['secure'] else ''}://{settings['host']}"
 
 
 class TemplateEngine(ABC):
     requires_env: Tuple[str] = []
+
+    registered_templates: List[TemplateEngine] = []
+    url = ''
+    ext = ''
+
+    __conf: ConfigOptions = None
+
+    __auto_checker: HealthChecker = None
+
+    # this exists only for interface purposes
+    @abstractmethod
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+        self.model = Model([], replacer, SyntaxtKit('', '', ''))
+        self.replacer = replacer
+
+    @abstractmethod
+    def init(self):
+        pass
 
     @classmethod
     def check_env(cls, env: dict) -> bool:
@@ -30,33 +49,75 @@ class TemplateEngine(ABC):
                 missing_keys.add(key)
         return len(missing_keys) == 0, missing_keys
 
-    @abstractmethod
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
-        self.model = Model([], replacer, SyntaxtKit('', '', ''))
-        self.replacer = replacer
+    @classmethod
+    def register(cls, env: ConfigOptions, ext: str) -> None:
+        cls.__conf = env
+        cls.ext = ext
+        settings = cls.__conf.env
+        cls.url = make_url(settings)
+        cls.__auto_checker = HealthChecker(
+            cls.__name__,
+            check_live=cls._check_live,
+            configure=cls._configure,
+            post_configuration=cls._re_register_templates
+        )
+
+    @classmethod
+    def _check_live(cls):
+        return requests.get(cls.url + '/live').status_code < 300
+
+    @classmethod
+    def is_up(cls) -> bool:
+        return cls.__auto_checker.is_up() if cls.__auto_checker is not None else False
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__}>'
+
+    @classmethod
+    def is_configuring(cls):
+        if cls.__auto_checker is None:
+            return True
+        return cls.__auto_checker.is_configuring()
+
+    @classmethod
+    def _configure(cls) -> None:
+        creds: MinioCreds = cls.__conf.minio
+        data = {
+            'host': creds.host,
+            'access_key': creds.key,
+            'pass_key': creds.password,
+            'secure': creds.secure,
+        }
+        res = requests.post(cls.url + '/configure', json=data)
+        if res.status_code >= 300:
+            raise FailedToConfigure
+
+    @classmethod
+    def _re_register_templates(cls):
+        for template in cls.registered_templates:
+            template.init()
 
     def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
+        # should make a dataclass here
         data = {
             'data': data,
             'template_name': self.pull_infos.remote.filename,
             'output_bucket': path.bucket,
             'output_name': path.filename,
-            'options': options.compile_options
+            'options': options.compile_options,
+            'push_result': options.push_result,
         }
         res = requests.post(self.url + '/publipost', json=data)
-        error = json.loads(res.text)
-        if error['error']:
-            raise Exception('An error has occured')
+        result = json.loads(res.text)
+        if 'error' in result:
+            if result['error']:
+                raise Exception('An error has occured')
+        return result
 
     def to_json(self) -> dict:
         return self.model.structure
 
-    @staticmethod
-    def configure(env: ConfigOptions):
-        return False
-
     def get_fields(self) -> List[str]:
-        return self.model.fields
-
-    def __repr__(self):
-        return f'<{self.__class__.__name__}>'
+        if self.model is not None and self.is_up():
+            return self.model.fields
+        return None

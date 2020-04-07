@@ -1,9 +1,9 @@
 # should be imported from the minio creds conf file
 
-MINIO_HOST: documents.staging.juniorisep.com
+MINIO_HOST: minio:9000
 MINIO_KEY: adminadmin
 MINIO_PASS: adminadmin
-SECURE: true
+SECURE: false
 
 engine_settings:
   docx: 
