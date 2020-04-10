@@ -2,22 +2,29 @@
 Base class
 """
 from __future__ import annotations
-from abc import abstractmethod, ABC
-from .ReplacerMiddleware import MultiReplacer
-from typing import Dict, Tuple, Set, List
-from ..minio_creds import PullInformations, MinioPath
-from .model_handler import Model, SyntaxtKit
-from ..template_db import RenderOptions, ConfigOptions
-import requests
+
 import json
-import threading
-import uuid
 import logging
-from .health_checker import HealthChecker, FailedToConfigure
+import threading
+import time
+import uuid
+from abc import ABC, abstractmethod
+from typing import Dict, List, Set, Tuple
+
+import requests
+
+from ..minio_creds import MinioPath, PullInformations
+from ..template_db import ConfigOptions, RenderOptions
+from .health_checker import AutoConfigurer, FailedToConfigure
+from .model_handler import Model, SyntaxtKit
+from .ReplacerMiddleware import MultiReplacer
 
 
 def make_url(settings: dict) -> str:
     return f"http{'s' if settings['secure'] else ''}://{settings['host']}"
+
+
+NEVER_PULLED = -1
 
 
 class TemplateEngine(ABC):
@@ -33,12 +40,16 @@ class TemplateEngine(ABC):
 
     # this exists only for interface purposes
     @abstractmethod
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
         self.model = Model([], replacer, SyntaxtKit('', '', ''))
+        self.pull_infos = pull_infos
         self.replacer = replacer
+        self.pulled_at = NEVER_PULLED
+        self.filename = filename
 
     @abstractmethod
     def init(self):
+        self.pulled_at = time.time()
         pass
 
     @classmethod
@@ -55,7 +66,7 @@ class TemplateEngine(ABC):
         cls.ext = ext
         settings = cls.__conf.env
         cls.url = make_url(settings)
-        cls.__auto_checker = HealthChecker(
+        cls.__auto_checker = AutoConfigurer(
             cls.__name__,
             check_live=cls._check_live,
             configure=cls._configure,
@@ -95,7 +106,10 @@ class TemplateEngine(ABC):
     @classmethod
     def _re_register_templates(cls):
         for template in cls.registered_templates:
-            template.init()
+            try:
+                template.init()
+            except:
+                logging.warning(f'Failed to init {template}')
 
     def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
         # should make a dataclass here

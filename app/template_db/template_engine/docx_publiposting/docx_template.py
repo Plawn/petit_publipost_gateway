@@ -37,15 +37,11 @@ class DocxTemplator(TemplateEngine):
     """
     requires_env = []
 
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
         DocxTemplator.registered_templates.append(self)
+        super().__init__(filename, pull_infos, replacer, temp_dir, settings)
 
-        self.pull_infos = pull_infos
-
-        self.filename = pull_infos.local
-        self.doc: docxTemplate = None
         self.model: Model = None
-        self.replacer = replacer
         # easier for now
         self.settings = Settings(settings['host'], settings['secure'])
         self.temp_dir = temp_dir
@@ -76,3 +72,4 @@ class DocxTemplator(TemplateEngine):
         if len(res['success']) < 1:
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()
+        super().init()
