@@ -1,8 +1,8 @@
-import traceback
 import logging
-import datetime
 import os
 import shutil
+import time
+import traceback
 import uuid
 from typing import Dict, List, Tuple
 
@@ -10,14 +10,15 @@ import Fancy_term as term
 import minio
 
 from .minio_creds import MinioPath, PullInformations
-from .template_engine import TemplateEngine, template_engines
 from .template_db import RenderOptions
+from .template_engine import NEVER_PULLED, TemplateEngine, template_engines
 from .template_engine.model_handler.utils import change_keys
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .utils import error_printer, info_printer, success_printer
 
 TEMP_FOLDER = 'temp'
 ENSURE_KEYS = 'ensure_keys'
+
 
 def from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
@@ -74,34 +75,30 @@ class Templator:
             pull_infos = PullInformations(local_filename, MinioPath(
                 self.remote_template_bucket, filename), self.minio_instance)
             if ext in self.available_engines:
-                template = self.available_engines[ext](
-                    pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
+                template = self.available_engines[ext](filename,
+                                                       pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
                 self.templates[name] = template
                 template.init()
                 if self.verbose:
-                    success_printer(
+                    logging.info(
                         f'\t- Successfully imported "{name}" using {template}')
-                    logging.info(f'\t- Successfully imported "{name}" using {template}')
                 return template.get_fields()
             else:
                 logging.error('Engine not available')
         except Exception as err:
             logging.error(
                 f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
-            logging.error(traceback.format_exc())
+            # logging.error(traceback.format_exc())
             raise
 
     def pull_templates(self) -> Tuple[List[str], List[str]]:
         """Downloading and caching all templates from Minio
         """
-        if self.verbose:
-            info_printer(
-                f'Importing templates from bucket "{self.remote_template_bucket}"')
-                
-        logging.info(f'Importing templates from bucket "{self.remote_template_bucket}"')
+        logging.info(
+            f'Initialising templates from bucket "{self.remote_template_bucket}"')
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
-            self.remote_template_bucket))
+            self.remote_template_bucket, recursive=True))
         successes, fails = [], []
         for filename in filenames:
             try:
@@ -110,10 +107,8 @@ class Templator:
             except:
                 fails.append(filename)
 
-        if self.verbose:
-            info_printer(
-                f'Import finished for bucket "{self.remote_template_bucket}"')
-        logging.info(f'Import finished for bucket "{self.remote_template_bucket}"')
+        logging.info(
+            f'Initialisation finished for bucket "{self.remote_template_bucket}"')
         return successes, fails
 
     def to_json(self):
@@ -124,13 +119,13 @@ class Templator:
     def render(self, template_name: str, data: Dict[str, str], output_name: str, options: RenderOptions) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
 
-        engine = self.templates[template_name]
+        engine = self.templates[template_name].template
 
         # to know if we want to ensure_keys or have an error
-        ensure_keys = ENSURE_KEYS in options.compile_options
+        should_ensure_keys = ENSURE_KEYS in options.compile_options
 
         data = change_keys(engine.model.merge(
-            data, ensure_keys), engine.replacer.to_doc)
+            data, should_ensure_keys), engine.replacer.to_doc)
 
         result = engine.render_to(
             data, MinioPath(self.output_path.bucket, output_name), options)
@@ -142,3 +137,44 @@ class Templator:
                 expires=self.time_delta)
         else:
             return result
+
+    # TODO: cut this in smaller pieces
+
+    def handle_cache(self):
+        """this methods checks the bucket for template updates or new templates
+        """
+        modified_at = (
+            (obj.object_name, obj.last_modified.timestamp())
+            for obj in self.minio_instance.list_objects(self.remote_template_bucket, recursive=True)
+        )
+        # TODO: should cache this after
+        loaded_filenames: Dict[str, TemplateEngine] = {
+            template.filename: template for template in self.templates.values()
+        }
+        to_reload: List[TemplateEngine] = []
+        to_load: List[str] = []
+        for filename, _modified_at in modified_at:
+            if filename in loaded_filenames:
+                pulled_at = loaded_filenames[filename].pulled_at
+                # -1 means that we never pulled the file before
+                if pulled_at != NEVER_PULLED and pulled_at < _modified_at:
+                    logging.info(f'Scheduled "{filename}" for reload')
+                    to_reload.append(loaded_filenames[filename])
+            else:
+                logging.info(
+                    f'New template detected "{filename}" -> scheduled for initial load')
+                to_load.append(filename)
+
+        # the easy part -> reloading the existing ones
+        for template in to_reload:
+            try:
+                template.init()
+            except Exception as e:
+                logging.error(e)
+
+        # the other part -> registering the other templates
+        for filename in to_load:
+            try:
+                self.pull_template(filename)
+            except:
+                logging.warning(f'Failed to pull template {filename}')

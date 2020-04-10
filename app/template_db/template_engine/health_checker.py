@@ -1,6 +1,6 @@
-from typing import *
-import threading
 import logging
+import threading
+from typing import *
 
 
 def check_live_func() -> bool:
@@ -20,7 +20,7 @@ base_check_up_time = 30
 class FailedToConfigure(Exception):
     pass
 
-class HealthChecker:
+class AutoConfigurer:
     """
     This class is useful when using another service which is not syncronyzed with this one
     Using the check_live function and the configure function this will try to keep the service up and running

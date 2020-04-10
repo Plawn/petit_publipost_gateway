@@ -25,19 +25,17 @@ class XlsxTemplator(TemplateEngine):
         'secure',
     )
 
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+        super().__init__(filename, pull_infos, replacer, temp_dir, settings)
         XlsxTemplator.registered_templates.append(self)
 
-        self.pull_infos = pull_infos
-        self.filename = pull_infos.local
-        self.replacer = replacer
         self.temp_dir = temp_dir
         self.model: Model = None
         self.url: str = None
         self.settings = Settings(settings['host'], settings['secure'])
 
     def __load_fields(self):
-        res = json.loads(requests.post(self.url + '/get_placeholders',
+        res = json.loads(requests.post(XlsxTemplator.url + '/get_placeholders',
                                        json={'name': self.pull_infos.remote.filename}).text)
         res = [(i, {}) for i in res]
         self.model = Model(res, self.replacer, SYNTAX_KIT)
@@ -52,3 +50,4 @@ class XlsxTemplator(TemplateEngine):
         if len(res['success']) < 1:
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()
+        super().init()
