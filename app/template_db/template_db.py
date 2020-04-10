@@ -1,22 +1,23 @@
-import traceback
 import json
-import os
 import logging
-from typing import Dict, Set, List
+import os
+import subprocess
+import threading
+import traceback
+from datetime import timedelta
+from typing import Dict, List, Set
 
 import minio
-from .data_objects import RenderOptions, ConfigOptions
-from .template_engine.ReplacerMiddleware import (FuncReplacer,
-                                                 MultiReplacer)
-from .template_engine import template_engines, TemplateEngine
+
+from .data_objects import ConfigOptions, RenderOptions
 from .minio_creds import MinioCreds, MinioPath
+from .template_engine import TemplateEngine, template_engines
 from .template_engine.model_handler.utils import from_strings_to_dict
+from .template_engine.ReplacerMiddleware import FuncReplacer, MultiReplacer
 from .templator import Templator
-from .utils import success_printer, error_printer
-from datetime import timedelta
-import subprocess
+from .utils import error_printer, success_printer
 
-
+CACHE_VALIDATION_INTERVAL = 60
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
 # placeholder for now
@@ -44,11 +45,18 @@ class TemplateDB:
         self.engine_settings = engine_settings
         self.engines: Dict[str, TemplateEngine] = None
         self.loading = True
+        self.cache_handler: threading.Thread = None
+        # template for now
+        # TODO: set it as a setting
+        self.auto_cache_renewal = True
 
     def full_init(self):
         self.loading = True
         self.__init_engines()
         self.load_templates()
+
+        if self.auto_cache_renewal:
+            self.start_cache_handler()
         self.loading = False
 
     def __init_engines(self):
@@ -76,11 +84,12 @@ class TemplateDB:
                     engine.register(settings, name)
                     logging.info(f'Successfuly registered "{name}" handler')
                 except Exception as e:
-                    error_printer(
-                        f'Failed to register server {engine}')
-                    logging.error(traceback.format_exc())
+                    # error_printer(
+                    #     f'Failed to register server {engine}')
+                    logging.error(e)
             else:
-                logging.error(f'Invalid env for handler "{name}" | missing keys {missing}')
+                logging.error(
+                    f'Invalid env for handler "{name}" | missing keys {missing}')
             available_engines[name] = engine
         return available_engines
 
@@ -105,3 +114,24 @@ class TemplateDB:
         return {
             name: templator.to_json() for name, templator in self.templators.items()
         }
+
+    def handle_cache(self):
+        for templator in self.templators.values():
+            try:
+                templator.handle_cache()
+            except:
+                logging.error(f'Failed to handle cache for {templator}')
+
+    def start_cache_handler(self):
+        e = threading.Event()
+        time_between_checks = CACHE_VALIDATION_INTERVAL
+
+        def f():
+            logging.info(
+                f'cache handler started, will run every {time_between_checks}')
+            while True:
+                self.handle_cache()
+                e.wait(time_between_checks)
+        t = threading.Thread(target=f)
+        t.start()
+        self.cache_handler = t
