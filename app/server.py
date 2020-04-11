@@ -120,5 +120,13 @@ def is_db_loaded():
 @app.route("/status", methods=['GET'])
 def status():
     return jsonify({
-        engine_name: (engine_name in template_db.engines and engine.is_up() ) for engine_name, engine in template_engine.template_engines.items()
+        engine_name: (engine_name in template_db.engines and engine.is_up()) for engine_name, engine in template_engine.template_engines.items()
     })
+
+@app.route('/status/<engine_name>', methods=['GET'])
+def engine_status(engine_name:str):
+    engine = template_db.engines[engine_name]
+    if engine_name in template_db.engines and engine.is_up():
+        return 'OK', 200
+    else:
+        return 'KO', 402

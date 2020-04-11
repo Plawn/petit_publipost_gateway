@@ -120,7 +120,7 @@ class Templator:
     def render(self, template_name: str, data: Dict[str, str], output_name: str, options: RenderOptions) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
 
-        engine = self.templates[template_name].template
+        engine = self.templates[template_name]
 
         # to know if we want to ensure_keys or have an error
         should_ensure_keys = ENSURE_KEYS in options.compile_options
