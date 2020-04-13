@@ -17,18 +17,25 @@ from .template_engine.ReplacerMiddleware import FuncReplacer, MultiReplacer
 from .templator import Templator
 from .utils import error_printer, success_printer
 
-CACHE_VALIDATION_INTERVAL = 60
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
 # placeholder for now
-BASE_REPLACER = MultiReplacer([FuncReplacer])
+
+
+def check_minio_instance(minio_instance: minio.Minio):
+    try:
+        res = minio_instance.list_buckets()
+        return True
+    except:
+        return False
 
 
 class TemplateDB:
     """Holds everything to publipost all types of templates
     """
 
-    def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta, temp_folder: str, minio_creds: MinioCreds):
+    def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta, temp_folder: str,
+                 minio_creds: MinioCreds, node_transformer: MultiReplacer, cache_validation_interval=-1):
         self.minio_creds = minio_creds
         self.minio_instance = minio.Minio(
             self.minio_creds.host,
@@ -37,8 +44,10 @@ class TemplateDB:
             secure=self.minio_creds.secure
         )
         # doing this to check if the minio instance is correct
-        self.minio_instance.list_buckets()
+        if not check_minio_instance(self.minio_instance):
+            raise Exception('Invalid minio creds')
         self.manifest: Dict[str, Dict[str, str]] = manifest
+        self.replacer = node_transformer
         self.temp_folder = temp_folder
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
@@ -46,31 +55,37 @@ class TemplateDB:
         self.engines: Dict[str, TemplateEngine] = None
         self.loading = True
         self.cache_handler: threading.Thread = None
-        # template for now
+        self.lock = threading.RLock()
+        # default for now
         # TODO: set it as a setting
-        self.auto_cache_renewal = True
+        self.cache_validation_interval = cache_validation_interval
+
+        self.__first_loaded = False
 
     def full_init(self):
+        if self.__first_loaded:
+            raise Exception('Already initialized')
         self.loading = True
         self.__init_engines()
         self.load_templates()
 
-        if self.auto_cache_renewal:
+        if self.cache_validation_interval != -1:
             self.start_cache_handler()
         self.loading = False
+
+        self.__first_loaded = True
 
     def __init_engines(self):
         self.engines = self.__init_template_servers()
         self.__init_templators()
 
     def load_templates(self):
-        for templator in self.templators.values():
-            templator.pull_templates()
+        # to be thread-safe
+        with self.lock:
+            for templator in self.templators.values():
+                templator.pull_templates()
 
     def render_template(self, _type: str, name: str, data: Dict[str, str],  output: str, options: RenderOptions):
-        # with this we can avoid transforming the data if we want to
-        if options.transform_data:
-            data: Dict[str, object] = from_strings_to_dict(data)
         return self.templators[_type].render(name, data, output, options)
 
     def __init_template_servers(self) -> None:
@@ -102,7 +117,7 @@ class TemplateDB:
                     MinioPath(bucket_name),
                     MinioPath(settings[OUTPUT_DIRECTORY_TOKEN]),
                     self.time_delta,
-                    BASE_REPLACER,
+                    self.replacer,
                     self.engine_settings,
                     self.engines
                 )
@@ -124,7 +139,7 @@ class TemplateDB:
 
     def start_cache_handler(self):
         e = threading.Event()
-        time_between_checks = CACHE_VALIDATION_INTERVAL
+        time_between_checks = self.cache_validation_interval
 
         def f():
             logging.info(

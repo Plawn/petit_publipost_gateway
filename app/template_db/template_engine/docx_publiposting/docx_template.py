@@ -47,8 +47,8 @@ class DocxTemplator(TemplateEngine):
         self.temp_dir = temp_dir
 
     def __load_fields(self) -> None:
-        res = json.loads(requests.post(DocxTemplator.url + '/get_placeholders',
-                                       json={'name': self.pull_infos.remote.filename}).text)
+        res = requests.post(DocxTemplator.url + '/get_placeholders',
+                                       json={'name': self.pull_infos.remote.filename}).json()
         fields: List[str] = res
         cleaned = []
         for field in fields:
@@ -61,14 +61,13 @@ class DocxTemplator(TemplateEngine):
         """Loads the document from the filename and inits it's values
         """
         if not self.is_up():
-            print('not up', self.is_up())
             raise Exception('Engine down')
-        res = json.loads(requests.post(DocxTemplator.url + '/load_templates', json=[
+        res = requests.post(DocxTemplator.url + '/load_templates', json=[
             {
                 'bucket_name': self.pull_infos.remote.bucket,
                 'template_name': self.pull_infos.remote.filename
             }
-        ]).text)
+        ]).json()
         if len(res['success']) < 1:
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()

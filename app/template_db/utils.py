@@ -1,9 +1,12 @@
-from typing import Dict, Set, Tuple, List
-import subprocess
 import os
+import subprocess
 import time
-import Fancy_term as term
 from datetime import timedelta
+from typing import Dict, List, Set, Tuple
+
+import Fancy_term as term
+import yaml
+
 from .template_engine import from_strings_to_dict
 
 RUN_TOKEN = 'script'
@@ -13,9 +16,6 @@ BEFORE_SCRIPT_TOKEN = 'before_script'
 AWAIT_FILE_TOKEN = 'await_file'
 AFTER_TOKEN = 'after_script'
 
-# not used for now
-AWAIT_FILE_EVENT = 'await_event'
-
 
 success_printer = term.Smart_print(term.Style(
     color=term.colors.green, substyles=[term.substyles.bold]))
@@ -23,3 +23,9 @@ error_printer = term.Smart_print(term.Style(
     color=term.colors.red, substyles=[term.substyles.bold]))
 info_printer = term.Smart_print(term.Style(
     color=term.colors.yellow, substyles=[term.substyles.bold]))
+
+
+def conf_loader(filename:str):
+    with open(filename, 'r') as f:
+        conf: Dict[str, object] = yaml.safe_load(f)
+    return conf

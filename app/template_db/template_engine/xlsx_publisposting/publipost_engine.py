@@ -35,18 +35,20 @@ class XlsxTemplator(TemplateEngine):
         self.settings = Settings(settings['host'], settings['secure'])
 
     def __load_fields(self):
-        res = json.loads(requests.post(XlsxTemplator.url + '/get_placeholders',
-                                       json={'name': self.pull_infos.remote.filename}).text)
+        res = requests.post(XlsxTemplator.url + '/get_placeholders',
+                                       json={'name': self.pull_infos.remote.filename}).json()
         res = [(i, {}) for i in res]
         self.model = Model(res, self.replacer, SYNTAX_KIT)
 
     def init(self):
-        res = json.loads(requests.post(XlsxTemplator.url + '/load_templates', json=[
+        if not self.is_up():
+            raise Exception('Engine down')
+        res = requests.post(XlsxTemplator.url + '/load_templates', json=[
             {
                 'bucket_name': self.pull_infos.remote.bucket,
                 'template_name': self.pull_infos.remote.filename
             }
-        ]).text)
+        ]).json()
         if len(res['success']) < 1:
             raise Exception(f'failed to import {self.filename}')
         self.__load_fields()

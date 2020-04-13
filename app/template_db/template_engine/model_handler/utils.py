@@ -89,6 +89,8 @@ def from_strings_to_dict(data: Dict[str, str]):
     """
     Makes a model for a given list of string like :
 
+    Used for the current version of phoenix-api 
+
     "mission.document.name": "test" => {
         mission: {
             document: {

@@ -17,8 +17,10 @@ def configure_func() -> None:
 
 base_check_up_time = 30
 
+
 class FailedToConfigure(Exception):
     pass
+
 
 class AutoConfigurer:
     """
@@ -30,7 +32,9 @@ class AutoConfigurer:
     :param configure: function () -> None used to configure the service if down
     :param check_up_time: time between checks, default 30 seconds
     """
-    def __init__(self, name: str, check_live: check_live_func, configure: configure_func, post_configuration:configure_func=None,mount=True,check_up_time=base_check_up_time):
+
+    def __init__(self, name: str, check_live: check_live_func, configure: configure_func,
+                 post_configuration: configure_func = None, mount=True, check_up_time=base_check_up_time):
         self.name = name
         self.event = threading.Event()
         self.check_live = check_live
@@ -50,7 +54,7 @@ class AutoConfigurer:
         self.thread.start()
 
     def __mount(self) -> None:
-        try :
+        try:
             self.configuring = True
             self.configure()
             self.up = True
@@ -65,10 +69,15 @@ class AutoConfigurer:
     def is_configuring(self) -> bool:
         return self.configuring
 
+    def trigger(self) -> None:
+        """force trigger a check of the current configuratioh
+        """
+        self.event.set()
 
     def run(self):
         while not self.stopped:
             self.event.wait(base_check_up_time)
+            self.event.clear()
             try:
                 if not self.check_live():
                     self.up = False
@@ -77,7 +86,8 @@ class AutoConfigurer:
                     self.configuring = True
                     self.configure()
                     self.up = True
-                    logging.info(f'service successfully configured | {self.name}')
+                    logging.info(
+                        f'service successfully configured | {self.name}')
                     if self.post_configuration:
                         self.post_configuration()
                 else:

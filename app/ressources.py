@@ -1,15 +1,26 @@
-from datetime import timedelta
-import yaml
 import os
-from .template_db import MinioCreds, TemplateDB
-from typing import Dict
 import shutil
 import threading
+from datetime import timedelta
+from typing import Dict
+
+import yaml
+
+from .template_db import MinioCreds, TemplateDB
+from .template_db.template_engine.ReplacerMiddleware import (FuncReplacer,
+                                                             MultiReplacer)
+from .template_db.utils import conf_loader
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
 TEMP_DIR = 'temp'
 MANIFEST_TOKEN = 'manifest'
+
+CACHE_VALIDATION_INTERVAL = 60
+
+PHOENIX_NODE_TRANSFORMER = MultiReplacer([
+    FuncReplacer
+])
 
 # should be somewhere else
 # preparing temp dir
@@ -25,30 +36,34 @@ except:
     raise Exception('missing "CONF_FILE" env')
 
 with open(conf_filename, 'r') as f:
-    settings: Dict[str, object] = yaml.safe_load(f)
+    conf: Dict[str, object] = yaml.safe_load(f)
 
-manifest = settings[MANIFEST_TOKEN]
+manifest = conf[MANIFEST_TOKEN]
 
 minio_creds = MinioCreds(
-    settings['MINIO_HOST'],
-    settings['MINIO_KEY'],
-    settings['MINIO_PASS'],
-    settings['SECURE'],
+    conf['MINIO_HOST'],
+    conf['MINIO_KEY'],
+    conf['MINIO_PASS'],
+    conf['SECURE'],
 )
 
-engine_settings = settings['engine_settings']
+engine_settings = conf['engine_settings']
 
 template_db = TemplateDB(
     manifest,
     engine_settings,
     TIME_DELTA,
     TEMP_DIR,
-    minio_creds
+    minio_creds,
+    node_transformer=PHOENIX_NODE_TRANSFORMER,
+    cache_validation_interval=CACHE_VALIDATION_INTERVAL
 )
+
 
 def load_db():
     template_db.full_init()
 
 
+# async initialization
 t = threading.Thread(target=load_db)
 t.start()

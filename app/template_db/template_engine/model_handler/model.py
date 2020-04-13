@@ -9,6 +9,9 @@ from .utils import MissingPlaceholderFallbackAction
 
 
 class SyntaxtKit:
+    """Used with a model to make it able to reconstruct missing placeholders
+    """
+
     def __init__(self, start: str, end: str, sep: str):
         self.start = start
         self.end = end
@@ -26,7 +29,7 @@ class Model:
 
     def __init__(self, strings_and_info: StringAndInfos, replacer: MultiReplacer, syntax_kit: SyntaxtKit):
         self.syntax: SyntaxtKit = syntax_kit
-        self.structure = None
+        self.structure: dict = None
         self.replacer = replacer
         self.fallback_action = MissingPlaceholderFallbackAction(
             FIELD_NAME_OPTION, self.replacer)
@@ -69,7 +72,7 @@ class Model:
                         d[item] = {}
                     else:
                         # this is kinda over-kill and not really used for the moment
-                        # if this gets to complicated just remove the PREV_TOKEN, INFO_FIELD_NAME options 
+                        # if this gets to complicated just remove the PREV_TOKEN, INFO_FIELD_NAME options
                         # but keep the FIELD_NAME_OPTION it's used and very important
                         # Strings and infos could le loaded from a json file located with the file
                         if not PREV_TOKEN in infos:

@@ -88,8 +88,7 @@ class Templator:
                 logging.error('Engine not available')
         except Exception as err:
             logging.error(
-                f'\t- Error importing "{name}" from {self.remote_template_bucket} | {err}')
-            # logging.error(traceback.format_exc())
+                f'\t- Error importing "{name}" from {self.remote_template_bucket}\t| {err}')
             raise
 
     def pull_templates(self) -> Tuple[List[str], List[str]]:

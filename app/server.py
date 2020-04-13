@@ -100,6 +100,9 @@ def publipost_document():
     options:RenderOptions = form.get('options', default_options)
     data = form['data']
     
+
+    if options.transform_data:
+        data: Dict[str, object] = from_strings_to_dict(data)
     # if we want to get the result back directly we can set the push_result to False
     # for email rendering we will use the push_result option
     return jsonify({

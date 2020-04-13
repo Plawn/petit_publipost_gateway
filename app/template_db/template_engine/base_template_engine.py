@@ -36,12 +36,12 @@ class TemplateEngine(ABC):
 
     __conf: ConfigOptions = None
 
-    __auto_checker: HealthChecker = None
+    __auto_checker: AutoConfigurer = None
 
-    # this exists only for interface purposes
+
     @abstractmethod
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
-        self.model = Model([], replacer, SyntaxtKit('', '', ''))
+        self.model:Model = None
         self.pull_infos = pull_infos
         self.replacer = replacer
         self.pulled_at = NEVER_PULLED
@@ -50,6 +50,8 @@ class TemplateEngine(ABC):
     @abstractmethod
     def init(self):
         self.pulled_at = time.time()
+        if not self.is_up():
+            self.__auto_checker.trigger()
         pass
 
     @classmethod
@@ -112,6 +114,9 @@ class TemplateEngine(ABC):
                 logging.warning(f'Failed to init {template}')
 
     def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
+        if not self.is_up():
+            self.__auto_checker.trigger()
+        
         # should make a dataclass here
         data = {
             'data': data,
@@ -121,8 +126,7 @@ class TemplateEngine(ABC):
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        res = requests.post(self.url + '/publipost', json=data)
-        result = json.loads(res.text)
+        result = requests.post(self.url + '/publipost', json=data).json()
         if 'error' in result:
             if result['error']:
                 raise Exception('An error has occured')
