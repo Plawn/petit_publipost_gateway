@@ -139,3 +139,13 @@ class TemplateEngine(ABC):
         if self.model is not None and self.is_up():
             return self.model.fields
         return None
+    
+    @classmethod
+    def remove_template(cls, template_name:str) -> None:
+        res = requests.delete(cls.url + '/remove_template',json={'template_name':template_name} )
+        if res.status_code >= 400:
+            raise Exception(f'failed to remàve template | {res}')
+
+    @classmethod
+    def list(cls):
+        return requests.get(cls.url + '/list').json()
