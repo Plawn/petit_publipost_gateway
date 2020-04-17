@@ -23,7 +23,7 @@ data = {
     "mission.documentReference(\"DDE\")": "DAT REF",
 }
 
-test('DDE', 'jeb/test.docx', 'phoenix', data)
+test('ARM', 'jeb/test.docx', 'phoenix', data)
 
 # test('ndf', 'jeb/test.xlsx', 'mission', {
 #     'date': 'OUAIPS'

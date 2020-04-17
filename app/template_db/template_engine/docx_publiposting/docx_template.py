@@ -37,7 +37,7 @@ class DocxTemplator(TemplateEngine):
     """
     requires_env = []
 
-    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
         DocxTemplator.registered_templates.append(self)
         super().__init__(filename, pull_infos, replacer, temp_dir, settings)
 
@@ -46,29 +46,14 @@ class DocxTemplator(TemplateEngine):
         self.settings = Settings(settings['host'], settings['secure'])
         self.temp_dir = temp_dir
 
-    def __load_fields(self) -> None:
-        res = requests.post(DocxTemplator.url + '/get_placeholders',
-                                       json={'name': self.pull_infos.remote.filename}).json()
-        fields: List[str] = res
+    def _load_fields(self, fields: List[str] = None) -> None:
+        if fields is None:
+            res = requests.post(DocxTemplator.url + '/get_placeholders',
+                                json={'name': self.exposed_as}).json()
+            fields: List[str] = res
         cleaned = []
         for field in fields:
             field, additional_infos = self.replacer.from_doc(field)
             add_infos(additional_infos)
             cleaned.append((field.strip(), additional_infos))
         self.model = Model(cleaned, self.replacer, SYNTAX_KIT)
-
-    def init(self) -> None:
-        """Loads the document from the filename and inits it's values
-        """
-        if not self.is_up():
-            raise Exception('Engine down')
-        res = requests.post(DocxTemplator.url + '/load_templates', json=[
-            {
-                'bucket_name': self.pull_infos.remote.bucket,
-                'template_name': self.pull_infos.remote.filename
-            }
-        ]).json()
-        if len(res['success']) < 1:
-            raise Exception(f'failed to import {self.filename}')
-        self.__load_fields()
-        super().init()

@@ -17,6 +17,7 @@ from flask import Flask, jsonify, request
 
 from .ressources import TEMP_DIR, template_db
 from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine, RenderOptions, ENSURE_KEYS
+from .template_db.template_engine.base_template_engine import EngineDown
 
 default_options = RenderOptions(push_result=True, compile_options=[ENSURE_KEYS], transform_data=True)
 
@@ -33,6 +34,9 @@ def using_loaded_db(func):
     f.__name__ = name
     return f
 
+
+def make_error(msg:str, code=500):
+    return jsonify({'error':msg}), code
 
 @app.route('/document', methods=['GET'])
 @using_loaded_db
@@ -105,9 +109,14 @@ def publipost_document():
         data: Dict[str, object] = from_strings_to_dict(data)
     # if we want to get the result back directly we can set the push_result to False
     # for email rendering we will use the push_result option
-    return jsonify({
+    try :
+        return jsonify({
         'result': template_db.render_template(_type, document_name, data, filename, options)
     })
+    except EngineDown:
+        return make_error('Engine down')
+    except:
+        return make_error('Unknown error')
 
 
 @app.route('/live', methods=['GET'])

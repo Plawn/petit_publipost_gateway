@@ -45,6 +45,8 @@ class AutoConfigurer:
         self.stopped = False
         self.thread: threading.Thread = None
         self.configuring = True
+
+        self.full_reload_scheduled = False
         self.init()
         if mount:
             self.__mount()
@@ -69,17 +71,25 @@ class AutoConfigurer:
     def is_configuring(self) -> bool:
         return self.configuring
 
-    def trigger(self) -> None:
+    def force_configure(self, schedule_full:bool) -> None:
         """force trigger a check of the current configuratioh
         """
-        self.event.set()
+        logging.warning(
+            f'service is not configured -> trying to configure | {self.name}')
+        self.configuring = True
+        self.configure()
+        self.up = True
+        logging.info(
+            f'service successfully configured | {self.name}')
+        self.configuring = False
+        self.full_reload_scheduled = schedule_full
 
     def run(self):
         while not self.stopped:
             self.event.wait(base_check_up_time)
             self.event.clear()
             try:
-                if not self.check_live():
+                if not self.check_live() or self.full_reload_scheduled:
                     self.up = False
                     logging.warning(
                         f'service is not configured -> trying to configure | {self.name}')
@@ -90,6 +100,7 @@ class AutoConfigurer:
                         f'service successfully configured | {self.name}')
                     if self.post_configuration:
                         self.post_configuration()
+                        self.full_reload_scheduled = False
                 else:
                     self.up = True
                     logging.info(f'service is up | {self.name}')

@@ -6,6 +6,7 @@ from ..ReplacerMiddleware import MultiReplacer
 import json
 from dataclasses import dataclass
 from ...template_db import RenderOptions, ConfigOptions
+from typing import *
 
 EXT = '.xlsx'
 
@@ -25,7 +26,7 @@ class XlsxTemplator(TemplateEngine):
         'secure',
     )
 
-    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
         super().__init__(filename, pull_infos, replacer, temp_dir, settings)
         XlsxTemplator.registered_templates.append(self)
 
@@ -34,22 +35,8 @@ class XlsxTemplator(TemplateEngine):
         self.url: str = None
         self.settings = Settings(settings['host'], settings['secure'])
 
-    def __load_fields(self):
+    def _load_fields(self, fields: List[str] = None) -> None:
         res = requests.post(XlsxTemplator.url + '/get_placeholders',
-                                       json={'name': self.pull_infos.remote.filename}).json()
+                            json={'name': self.exposed_as}).json()
         res = [(i, {}) for i in res]
         self.model = Model(res, self.replacer, SYNTAX_KIT)
-
-    def init(self):
-        if not self.is_up():
-            raise Exception('Engine down')
-        res = requests.post(XlsxTemplator.url + '/load_templates', json=[
-            {
-                'bucket_name': self.pull_infos.remote.bucket,
-                'template_name': self.pull_infos.remote.filename
-            }
-        ]).json()
-        if len(res['success']) < 1:
-            raise Exception(f'failed to import {self.filename}')
-        self.__load_fields()
-        super().init()

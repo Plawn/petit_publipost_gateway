@@ -120,7 +120,8 @@ class Templator:
         output_name = os.path.join(self.output_path.filename, output_name)
 
         engine = self.templates[template_name]
-
+        if not engine.is_up():
+            engine.reconfigure()
         # to know if we want to ensure_keys or have an error
         should_ensure_keys = ENSURE_KEYS in options.compile_options
 

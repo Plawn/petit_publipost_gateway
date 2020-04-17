@@ -27,6 +27,10 @@ def make_url(settings: dict) -> str:
 NEVER_PULLED = -1
 
 
+class EngineDown(Exception):
+    """The engine is down and cannot answer"""
+
+
 class TemplateEngine(ABC):
     requires_env: Tuple[str] = []
 
@@ -38,21 +42,17 @@ class TemplateEngine(ABC):
 
     __auto_checker: AutoConfigurer = None
 
-
     @abstractmethod
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
-        self.model:Model = None
+        self.model: Model = None
         self.pull_infos = pull_infos
         self.replacer = replacer
         self.pulled_at = NEVER_PULLED
         self.filename = filename
+        self.exposed_as = self.get_exposed_as()
 
-    @abstractmethod
-    def init(self):
-        self.pulled_at = time.time()
-        if not self.is_up():
-            self.__auto_checker.trigger()
-        pass
+    def get_exposed_as(self):
+        return f'{self.pull_infos.remote.bucket}/{self.pull_infos.remote.filename}'
 
     @classmethod
     def check_env(cls, env: dict) -> bool:
@@ -101,9 +101,12 @@ class TemplateEngine(ABC):
             'pass_key': creds.password,
             'secure': creds.secure,
         }
-        res = requests.post(cls.url + '/configure', json=data)
-        if res.status_code >= 300:
-            raise FailedToConfigure
+        try:
+            res = requests.post(cls.url + '/configure', json=data)
+            if res.status_code >= 300:
+                raise FailedToConfigure
+        except:
+            raise EngineDown('xlsx')
 
     @classmethod
     def _re_register_templates(cls):
@@ -115,12 +118,12 @@ class TemplateEngine(ABC):
 
     def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
         if not self.is_up():
-            self.__auto_checker.trigger()
-        
+            self.reconfigure()
+
         # should make a dataclass here
         data = {
             'data': data,
-            'template_name': self.pull_infos.remote.filename,
+            'template_name': self.exposed_as,
             'output_bucket': path.bucket,
             'output_name': path.filename,
             'options': options.compile_options,
@@ -139,13 +142,43 @@ class TemplateEngine(ABC):
         if self.model is not None and self.is_up():
             return self.model.fields
         return None
-    
+
     @classmethod
-    def remove_template(cls, template_name:str) -> None:
-        res = requests.delete(cls.url + '/remove_template',json={'template_name':template_name} )
+    def remove_template(cls, template_name: str) -> None:
+        res = requests.delete(cls.url + '/remove_template',
+                              json={'template_name': template_name})
         if res.status_code >= 400:
-            raise Exception(f'failed to remàve template | {res}')
+            raise Exception(f'failed to remove template | {res}')
 
     @classmethod
     def list(cls):
         return requests.get(cls.url + '/list').json()
+
+    def reconfigure(self, full=False):
+        self.__auto_checker.force_configure(not full)
+        if full:
+            self._re_register_templates()
+        else:
+            self.init()
+
+    @abstractmethod
+    def _load_fields(self, fields: List[str] = None) -> None:
+        pass
+
+    def init(self) -> None:
+        """Loads the document from the filename and inits it's values
+        """
+        if not self.is_up():
+            self.reconfigure()
+        res = requests.post(self.url + '/load_templates',
+                            json=[{
+                                'bucket_name': self.pull_infos.remote.bucket,
+                                'template_name': self.pull_infos.remote.filename,
+                                'exposed_as': self.exposed_as
+                            }]).json()
+        successes = res['success']
+        if len(res['success']) < 1:
+            raise Exception(f'failed to import {self.filename}')
+        fields = successes[0]['fields']
+        self._load_fields(fields)
+        self.pulled_at = time.time()
