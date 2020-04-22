@@ -91,6 +91,9 @@ class TemplateDB:
     def __init_template_servers(self) -> None:
         available_engines: Dict[str, TemplateEngine] = {}
         for name, engine in template_engines.items():
+            if name not in self.engine_settings:
+                logging.warning(f'No configuration for engine {name}')
+                continue
             env = self.engine_settings[name]
             ok, missing = engine.check_env(env)
             settings = ConfigOptions(env, self.minio_creds)

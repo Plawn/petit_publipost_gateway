@@ -12,6 +12,9 @@ engine_settings:
   xlsx:
     host: localhost:3001
     secure: false
+  pptx:
+    host: localhost:3003
+    secure: false
 
 manifest:
   ppp:

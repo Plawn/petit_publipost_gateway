@@ -106,7 +106,7 @@ class TemplateEngine(ABC):
             if res.status_code >= 300:
                 raise FailedToConfigure
         except:
-            raise EngineDown('xlsx')
+            raise EngineDown(cls.__name__)
 
     @classmethod
     def _re_register_templates(cls):
@@ -170,7 +170,7 @@ class TemplateEngine(ABC):
         """
         if not self.is_up():
             self.reconfigure()
-        res = requests.post(self.url + '/load_templates',
+        res = requests.post(self.__class__.url + '/load_templates',
                             json=[{
                                 'bucket_name': self.pull_infos.remote.bucket,
                                 'template_name': self.pull_infos.remote.filename,

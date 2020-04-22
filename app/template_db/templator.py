@@ -85,8 +85,9 @@ class Templator:
                         f'\t- Successfully imported "{name}" using {template}')
                 return template.get_fields()
             else:
-                logging.error('Engine not available')
+                logging.error(f'Engine not available | {ext}')
         except Exception as err:
+            # import traceback; traceback.print_exc();
             logging.error(
                 f'\t- Error importing "{name}" from {self.remote_template_bucket}\t| {err}')
             raise
