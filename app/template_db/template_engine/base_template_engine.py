@@ -129,7 +129,7 @@ class TemplateEngine(ABC):
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        result = requests.post(self.url + '/publipost', json=data).json()
+        result = requests.post(self.__class__.url + '/publipost', json=data).json()
         if 'error' in result:
             if result['error']:
                 raise Exception('An error has occured')

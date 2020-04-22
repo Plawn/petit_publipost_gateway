@@ -10,7 +10,7 @@ from typing import *
 
 EXT = '.xlsx'
 
-SYNTAX_KIT = SyntaxtKit('${', '}', '.')
+SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
 
 @dataclass

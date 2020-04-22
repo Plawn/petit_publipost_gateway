@@ -116,6 +116,7 @@ def publipost_document():
     except EngineDown:
         return make_error('Engine down')
     except:
+        import traceback; traceback.print_exc();
         return make_error('Unknown error')
 
 
