@@ -41,14 +41,13 @@ class DocxTemplator(TemplateEngine):
         DocxTemplator.registered_templates.append(self)
         super().__init__(filename, pull_infos, replacer, temp_dir, settings)
 
-        self.model: Model = None
         # easier for now
         self.settings = Settings(settings['host'], settings['secure'])
         self.temp_dir = temp_dir
 
     def _load_fields(self, fields: List[str] = None) -> None:
         if fields is None:
-            res = requests.post(DocxTemplator.url + '/get_placeholders',
+            res = requests.post(self.url + '/get_placeholders',
                                 json={'name': self.exposed_as}).json()
             fields: List[str] = res
         cleaned = []

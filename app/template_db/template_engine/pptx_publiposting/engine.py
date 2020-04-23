@@ -1,12 +1,14 @@
-from ..base_template_engine import TemplateEngine
-from ..model_handler import Model, SyntaxtKit
-import requests
-from ...minio_creds import PullInformations, MinioPath, MinioCreds
-from ..ReplacerMiddleware import MultiReplacer
 import json
 from dataclasses import dataclass
-from ...template_db import RenderOptions, ConfigOptions
 from typing import *
+
+import requests
+
+from ...minio_creds import MinioCreds, MinioPath, PullInformations
+from ...template_db import ConfigOptions, RenderOptions
+from ..base_template_engine import TemplateEngine
+from ..model_handler import Model, SyntaxtKit
+from ..ReplacerMiddleware import MultiReplacer
 
 EXT = '.xlsx'
 
@@ -30,13 +32,10 @@ class PptxTemplator(TemplateEngine):
         super().__init__(filename, pull_infos, replacer, temp_dir, settings)
         PptxTemplator.registered_templates.append(self)
 
-        self.temp_dir = temp_dir
-        self.model: Model = None
-        self.url: str = None
         self.settings = Settings(settings['host'], settings['secure'])
 
     def _load_fields(self, fields: List[str] = None) -> None:
-        res = requests.post(PptxTemplator.url + '/get_placeholders',
+        res = requests.post(self.url + '/get_placeholders',
                             json={'name': self.exposed_as}).json()
         res = [(i, {}) for i in res]
         self.model = Model(res, self.replacer, SYNTAX_KIT)

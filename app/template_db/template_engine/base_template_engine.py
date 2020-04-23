@@ -129,7 +129,7 @@ class TemplateEngine(ABC):
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        result = requests.post(self.__class__.url + '/publipost', json=data).json()
+        result = requests.post(self.url + '/publipost', json=data).json()
         if 'error' in result:
             if result['error']:
                 raise Exception('An error has occured')
@@ -170,7 +170,7 @@ class TemplateEngine(ABC):
         """
         if not self.is_up():
             self.reconfigure()
-        res = requests.post(self.__class__.url + '/load_templates',
+        res = requests.post(self.url + '/load_templates',
                             json=[{
                                 'bucket_name': self.pull_infos.remote.bucket,
                                 'template_name': self.pull_infos.remote.filename,
