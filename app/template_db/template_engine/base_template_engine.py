@@ -168,17 +168,20 @@ class TemplateEngine(ABC):
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
-        if not self.is_up():
-            self.reconfigure()
-        res = requests.post(self.url + '/load_templates',
-                            json=[{
-                                'bucket_name': self.pull_infos.remote.bucket,
-                                'template_name': self.pull_infos.remote.filename,
-                                'exposed_as': self.exposed_as
-                            }]).json()
-        successes = res['success']
-        if len(res['success']) < 1:
-            raise Exception(f'failed to import {self.filename}')
-        fields = successes[0]['fields']
-        self._load_fields(fields)
-        self.pulled_at = time.time()
+        try :
+            if not self.is_up():
+                self.reconfigure()
+            res = requests.post(self.url + '/load_templates',
+                                json=[{
+                                    'bucket_name': self.pull_infos.remote.bucket,
+                                    'template_name': self.pull_infos.remote.filename,
+                                    'exposed_as': self.exposed_as
+                                }]).json()
+            successes = res['success']
+            if len(res['success']) < 1:
+                raise Exception(f'failed to import {self.filename}')
+            fields = successes[0]['fields']
+            self._load_fields(fields)
+            self.pulled_at = time.time()
+        except:
+            self.pulled_at = NEVER_PULLED

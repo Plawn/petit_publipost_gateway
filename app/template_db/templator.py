@@ -159,7 +159,7 @@ class Templator:
             if filename in loaded_filenames:
                 pulled_at = loaded_filenames[filename].pulled_at
                 # -1 means that we never pulled the file before
-                if pulled_at != NEVER_PULLED and pulled_at < _modified_at:
+                if pulled_at < _modified_at:
                     logging.info(f'Scheduled "{filename}" for reload')
                     to_reload.append(loaded_filenames[filename])
             else:

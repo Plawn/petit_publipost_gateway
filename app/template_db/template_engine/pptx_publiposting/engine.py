@@ -10,7 +10,7 @@ from ..base_template_engine import TemplateEngine
 from ..model_handler import Model, SyntaxtKit
 from ..ReplacerMiddleware import MultiReplacer
 
-EXT = '.xlsx'
+EXT = '.pptx'
 
 SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
