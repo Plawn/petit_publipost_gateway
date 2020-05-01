@@ -36,8 +36,8 @@ class AutoConfigurer:
     :param check_up_time: time between checks, default 30 seconds
     """
 
-    def __init__(self, name: str, check_live: check_live_func, configure: configure_func,
-                 post_configuration: configure_func = None, mount=True, check_up_time=base_check_up_time):
+    def __init__(self, name: str, check_live: check_live_func, configure: configure_func, logger: logging.Logger,
+                 post_configuration: configure_func = None,  mount=True, check_up_time=base_check_up_time):
         self.name = name
         self.event = threading.Event()
         self.check_live = check_live
@@ -48,6 +48,7 @@ class AutoConfigurer:
         self.stopped = False
         self.thread: threading.Thread = None
         self.configuring = True
+        self.logger = logger
 
         self.full_reload_scheduled = False
 
@@ -98,12 +99,12 @@ class AutoConfigurer:
             # if we are not configuring we acquire the lock
             # then we configure
             with self.force_configure_lock:
-                logging.warning(
+                self.logger.warning(
                     f'service is not configured -> trying to configure | {self.name}')
                 self.configuring = True
                 self.configure()
                 self.up = True
-                logging.info(
+                self.logger.info(
                     f'service successfully configured | {self.name}')
                 self.configuring = False
                 self.full_reload_scheduled = schedule_full
@@ -122,7 +123,7 @@ class AutoConfigurer:
             try:
                 if not self.check_live() or self.full_reload_scheduled:
                     self.up = False
-                    logging.warning(
+                    self.logger.warning(
                         f'service is not configured -> trying to configure | {self.name}')
                     self.configuring = True
 
@@ -131,7 +132,7 @@ class AutoConfigurer:
 
                     self.configure()
                     self.up = True
-                    logging.info(
+                    self.logger.info(
                         f'service successfully configured | {self.name}')
                     if self.post_configuration:
                         self.post_configuration()
@@ -141,15 +142,15 @@ class AutoConfigurer:
                     self.__run_post_hooks()
                 else:
                     self.up = True
-                    logging.info(f'service is up | {self.name}')
-                    logging.info(f'running check hooks')
+                    self.logger.info(f'service is up | {self.name}')
+                    self.logger.info(f'running check hooks')
                     self.__run_on_check_hooks()
             except FailedToConfigure:
                 self.up = False
-                logging.error(f'failed to configure service | {self.name}')
+                self.logger.error(f'failed to configure service | {self.name}')
             except Exception as e:
                 self.up = False
-                logging.error(f'service is down | {self.name}')
+                self.logger.error(f'service is down | {self.name}')
             finally:
                 self.configuring = False
 
@@ -159,13 +160,12 @@ class AutoConfigurer:
         self.stopped = True
         self.event.set()
 
-
     def __run_hooks(self, hooks: dict):
         for name, hook in hooks.items():
             try:
                 hook()
             except Exception as e:
-                logging.warning(f'Hook {name} failed | {e}')
+                self.logger.warning(f'Hook {name} failed | {e}')
 
     def __run_pre_hooks(self):
         self.__run_hooks(self.pre_conf_hooks)

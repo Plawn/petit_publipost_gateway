@@ -37,7 +37,7 @@ class Templator:
     def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
                  output_path: MinioPath, time_delta: datetime.timedelta,
                  replacer: MultiReplacer, engine_settings: dict,
-                 available_engines: Dict[str, TemplateEngine]):
+                 available_engines: Dict[str, TemplateEngine], logger: logging.Logger):
         self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
             temp_dir, self.remote_template_bucket)
@@ -49,6 +49,7 @@ class Templator:
         self.engine_settings = engine_settings
         self.verbose = True
         self.available_engines: Dict[str, TemplateEngine] = available_engines
+        self.logger = logger
 
     def pull_template(self, filename: str) -> List[str]:
         """Downloading and caching one template from Minio
@@ -66,21 +67,21 @@ class Templator:
                 self.templates[name] = template
                 template.init()
                 if self.verbose:
-                    logging.info(
+                    self.logger.info(
                         f'\t- Successfully registered "{name}" using {template}')
                 return template.get_fields()
             else:
-                logging.error(f'Engine not available | {ext}')
+                self.logger.error(f'Engine not available | {ext}')
         except Exception as err:
             # import traceback; traceback.print_exc();
-            logging.error(
+            self.logger.error(
                 f'\t- Error importing "{name}" from {self.remote_template_bucket}\t| {err}')
             raise
 
     def pull_templates(self) -> Tuple[List[str], List[str]]:
         """Downloading and caching all templates from Minio
         """
-        logging.info(
+        self.logger.info(
             f'Initialising templates from bucket "{self.remote_template_bucket}"')
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
@@ -93,7 +94,7 @@ class Templator:
             except:
                 fails.append(filename)
 
-        logging.info(
+        self.logger.info(
             f'Initialisation finished for bucket "{self.remote_template_bucket}"')
         return successes, fails
 
@@ -145,10 +146,10 @@ class Templator:
                 pulled_at = loaded_filenames[filename].pulled_at
                 # -1 means that we never pulled the file before
                 if pulled_at < _modified_at:
-                    logging.info(f'Scheduled "{filename}" for reload')
+                    self.logger.info(f'Scheduled "{filename}" for reload')
                     to_reload.append(loaded_filenames[filename])
             else:
-                logging.info(
+                self.logger.info(
                     f'New template detected "{filename}" -> scheduled for initial load')
                 to_load.append(filename)
 
@@ -157,11 +158,11 @@ class Templator:
             try:
                 template.init()
             except Exception as e:
-                logging.error(e)
+                self.logger.error(e)
 
         # the other part -> registering the other templates
         for filename in to_load:
             try:
                 self.pull_template(filename)
             except:
-                logging.warning(f'Failed to pull template {filename}')
+                self.logger.warning(f'Failed to pull template {filename}')

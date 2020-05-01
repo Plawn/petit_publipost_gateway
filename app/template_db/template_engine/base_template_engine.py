@@ -37,13 +37,14 @@ class TemplateEngine(ABC):
     registered_templates: List[TemplateEngine] = []
     url = ''
     ext = ''
-
+    logger:logging.Logger = None
     __conf: ConfigOptions = None
 
     __auto_checker: AutoConfigurer = None
 
     @abstractmethod
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
+        
         self.model: Model = None
         self.pull_infos = pull_infos
         self.replacer = replacer
@@ -69,15 +70,17 @@ class TemplateEngine(ABC):
         return len(missing_keys) == 0, missing_keys
 
     @classmethod
-    def register(cls, env: ConfigOptions, ext: str) -> None:
+    def register(cls, env: ConfigOptions, ext: str, logger:logging.Logger) -> None:
         cls.__conf = env
         cls.ext = ext
+        cls.logger = logger
         settings = cls.__conf.env
         cls.url = make_url(settings)
         cls.__auto_checker = AutoConfigurer(
             cls.__name__,
             check_live=cls._check_live,
             configure=cls._configure,
+            logger=cls.logger,
             post_configuration=cls._re_register_templates
         )
 
@@ -120,7 +123,7 @@ class TemplateEngine(ABC):
             try:
                 template.init()
             except:
-                logging.warning(f'Failed to init {template}')
+                cls.logger.warning(f'Failed to init {template}')
 
     def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
         if not self.is_up():

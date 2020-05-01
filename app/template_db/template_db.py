@@ -34,7 +34,7 @@ class TemplateDB:
     """
 
     def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta, temp_folder: str,
-                 minio_creds: MinioCreds, node_transformer: MultiReplacer, cache_validation_interval=-1):
+                 minio_creds: MinioCreds, node_transformer: MultiReplacer, cache_validation_interval=-1, logger:logging.Logger=None):
         self.minio_creds = minio_creds
         self.minio_instance = minio.Minio(
             self.minio_creds.host,
@@ -42,6 +42,9 @@ class TemplateDB:
             secret_key=self.minio_creds.password,
             secure=self.minio_creds.secure
         )
+        if logger is None :
+            logger = logging.getLogger('TemplateDB logger')
+        self.logger = logger
         # doing this to check if the minio instance is correct
         if not check_minio_instance(self.minio_instance):
             raise Exception('Invalid minio creds')
@@ -91,19 +94,20 @@ class TemplateDB:
         available_engines: Dict[str, TemplateEngine] = {}
         for name, engine in template_engines.items():
             if name not in self.engine_settings:
-                logging.warning(f'No configuration for engine {name}')
+                self.logger.warning(f'No configuration for engine {name}')
                 continue
             env = self.engine_settings[name]
             ok, missing = engine.check_env(env)
             settings = ConfigOptions(env, self.minio_creds)
             if ok:
                 try:
-                    engine.register(settings, name)
-                    logging.info(f'Successfuly registered "{name}" handler')
+                    engine.register(settings, name, self.logger)
+                    self.logger.info(f'Successfuly registered "{name}" handler')
                 except Exception as e:
-                    logging.error(e)
+                    import traceback; traceback.print_exc();
+                    self.logger.error(e)
             else:
-                logging.error(
+                self.logger.error(
                     f'Invalid env for handler "{name}" | missing keys {missing}')
             available_engines[name] = engine
         return available_engines
@@ -119,7 +123,8 @@ class TemplateDB:
                     self.time_delta,
                     self.replacer,
                     self.engine_settings,
-                    self.engines
+                    self.engines,
+                    self.logger
                 )
             except Exception as e:
                 traceback.print_exc()
@@ -134,14 +139,14 @@ class TemplateDB:
             try:
                 templator.handle_cache()
             except:
-                logging.error(f'Failed to handle cache for {templator}')
+                self.logger.error(f'Failed to handle cache for {templator}')
 
     def start_cache_handler(self):
         e = threading.Event()
         time_between_checks = self.cache_validation_interval
 
         def f():
-            logging.info(
+            self.logger.info(
                 f'cache handler started, will run every {time_between_checks}')
             while True:
                 self.handle_cache()
