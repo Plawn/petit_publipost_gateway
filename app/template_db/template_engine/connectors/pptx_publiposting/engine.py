@@ -35,7 +35,8 @@ class PptxTemplator(TemplateEngine):
         self.settings = Settings(settings['host'], settings['secure'])
 
     def _load_fields(self, fields: List[str] = None) -> None:
-        res = requests.post(self.url + '/get_placeholders',
-                            json={'name': self.exposed_as}).json()
-        res = [self.replacer.from_doc(i) for i in res]
-        self.model = Model(res, self.replacer, SYNTAX_KIT)
+        if fields is None:
+            fields = requests.post(self.url + '/get_placeholders',
+                                json={'name': self.exposed_as}).json()
+        fields = [self.replacer.from_doc(i) for i in fields]
+        self.model = Model(fields, self.replacer, SYNTAX_KIT)
