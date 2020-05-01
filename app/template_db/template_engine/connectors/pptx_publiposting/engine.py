@@ -4,15 +4,15 @@ from typing import *
 
 import requests
 
-from ...minio_creds import MinioCreds, MinioPath, PullInformations
-from ...template_db import ConfigOptions, RenderOptions
-from ..base_template_engine import TemplateEngine
-from ..model_handler import Model, SyntaxtKit
-from ..ReplacerMiddleware import MultiReplacer
+from ....minio_creds import MinioCreds, MinioPath, PullInformations
+from ....template_db import ConfigOptions, RenderOptions
+from ...base_template_engine import TemplateEngine
+from ...model_handler import Model, SyntaxtKit
+from ...ReplacerMiddleware import MultiReplacer
 
-EXT = '.xlsx'
+EXT = '.pptx'
 
-SYNTAX_KIT = SyntaxtKit('${', '}', '.')
+SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Settings:
     secure: bool
 
 
-class XlsxTemplator(TemplateEngine):
+class PptxTemplator(TemplateEngine):
 
     requires_env = (
         'host',
@@ -30,7 +30,7 @@ class XlsxTemplator(TemplateEngine):
 
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
         super().__init__(filename, pull_infos, replacer, temp_dir, settings)
-        XlsxTemplator.registered_templates.append(self)
+        PptxTemplator.registered_templates.append(self)
 
         self.settings = Settings(settings['host'], settings['secure'])
 

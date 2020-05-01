@@ -1,7 +1,7 @@
 import logging
 import threading
 from typing import *
-
+import uuid
 
 def check_live_func() -> bool:
     """Can raise Exception
@@ -19,6 +19,8 @@ base_check_up_time = 30
 
 
 class FailedToConfigure(Exception):
+    """The AutoConfigurer could'nt complete the configuration of the service
+    """
     pass
 
 
@@ -47,7 +49,16 @@ class AutoConfigurer:
         self.configuring = True
 
         self.full_reload_scheduled = False
+
+        self.post_conf_hooks = {}
+        self.pre_conf_hooks = {}
+        self.on_check_hooks = {}
+
+        self.force_configure_lock = threading.Lock()
+        self.force_configure_queue = []
+
         self.init()
+
         if mount:
             self.__mount()
 
@@ -71,18 +82,30 @@ class AutoConfigurer:
     def is_configuring(self) -> bool:
         return self.configuring
 
-    def force_configure(self, schedule_full:bool) -> None:
-        """force trigger a check of the current configuratioh
+    def force_configure(self, schedule_full: bool) -> None:
+        """force trigger a check of the current configuration
         """
-        logging.warning(
-            f'service is not configured -> trying to configure | {self.name}')
-        self.configuring = True
-        self.configure()
-        self.up = True
-        logging.info(
-            f'service successfully configured | {self.name}')
-        self.configuring = False
-        self.full_reload_scheduled = schedule_full
+        if not self.configuring:
+            # if we are not configuring we acquire the lock
+            # then we configure
+            with self.force_configure_lock:
+                logging.warning(
+                    f'service is not configured -> trying to configure | {self.name}')
+                self.configuring = True
+                self.configure()
+                self.up = True
+                logging.info(
+                    f'service successfully configured | {self.name}')
+                self.configuring = False
+                self.full_reload_scheduled = schedule_full
+        else:
+            # if we are already configuring it means that the precedent block is being executed already
+            # which means that we don't need to configure
+            # but we need to check if the precendent configuration was successful
+            with self.force_configure_lock:
+                if not self.up:
+                    raise FailedToConfigure(f'{self}')
+
 
     def run(self):
         while not self.stopped:
@@ -94,6 +117,10 @@ class AutoConfigurer:
                     logging.warning(
                         f'service is not configured -> trying to configure | {self.name}')
                     self.configuring = True
+
+                    # to bind other actions cleanly
+                    self.run_pre_hooks()
+
                     self.configure()
                     self.up = True
                     logging.info(
@@ -101,9 +128,14 @@ class AutoConfigurer:
                     if self.post_configuration:
                         self.post_configuration()
                         self.full_reload_scheduled = False
+
+                    # to bind other actions cleanly
+                    self.run_post_hooks()
                 else:
                     self.up = True
                     logging.info(f'service is up | {self.name}')
+                    logging.info(f'running check hooks')
+                    self.run_on_check_hooks()
             except FailedToConfigure:
                 self.up = False
                 logging.error(f'failed to configure service | {self.name}')
@@ -116,3 +148,28 @@ class AutoConfigurer:
     def stop(self):
         self.stopped = True
         self.event.set()
+
+    def __run_hooks(self, hooks: dict):
+        for name, hook in hooks.items():
+            try:
+                hook()
+            except Exception as e:
+                logging.warning(f'Hook {name} failed | {e}')
+
+    def run_pre_hooks(self):
+        self.__run_hooks(self.pre_conf_hooks)
+
+    def run_post_hooks(self):
+        self.__run_hooks(self.post_conf_hooks)
+
+    def run_on_check_hooks(self):
+        self.__run_hooks(self.on_check_hooks)
+
+    def register_post_hook(self, name: str, func: configure_func):
+        self.post_conf_hooks[name] = func
+
+    def register_pre_hook(self, name: str, func: configure_func):
+        self.pre_conf_hooks[name] = func
+
+    def register_on_check_hook(self, name: str, func: configure_func):
+        self.on_check_hooks[name] = func

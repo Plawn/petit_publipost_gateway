@@ -82,7 +82,7 @@ class Templator:
                 template.init()
                 if self.verbose:
                     logging.info(
-                        f'\t- Successfully imported "{name}" using {template}')
+                        f'\t- Successfully registered "{name}" using {template}')
                 return template.get_fields()
             else:
                 logging.error(f'Engine not available | {ext}')

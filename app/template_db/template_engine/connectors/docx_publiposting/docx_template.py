@@ -7,14 +7,12 @@ from typing import Dict, Generator, List, Set, Union
 
 import requests
 
-from ...minio_creds import MinioCreds, MinioPath, PullInformations
-from ..base_template_engine import TemplateEngine
-from ...template_db import RenderOptions, ConfigOptions
-from ..model_handler import Model, SyntaxtKit
-from ..ReplacerMiddleware import MultiReplacer
-from . import utils
+from ....minio_creds import MinioCreds, MinioPath, PullInformations
+from ...base_template_engine import TemplateEngine
+from ....template_db import RenderOptions, ConfigOptions
+from ...model_handler import Model, SyntaxtKit
+from ...ReplacerMiddleware import MultiReplacer
 
-TEMP_FOLDER = 'temp'
 SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 
 
@@ -22,8 +20,6 @@ SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
 class Settings:
     host: str
     secure: bool
-
-# placeholder for now
 
 
 def add_infos(_dict: dict) -> None:

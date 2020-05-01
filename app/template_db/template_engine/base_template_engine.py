@@ -15,7 +15,7 @@ import requests
 
 from ..minio_creds import MinioPath, PullInformations
 from ..template_db import ConfigOptions, RenderOptions
-from .health_checker import AutoConfigurer, FailedToConfigure
+from .auto_configurer import AutoConfigurer, FailedToConfigure
 from .model_handler import Model, SyntaxtKit
 from .ReplacerMiddleware import MultiReplacer
 

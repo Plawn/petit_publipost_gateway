@@ -12,9 +12,6 @@ from .template_engine import from_strings_to_dict
 RUN_TOKEN = 'script'
 PORT_TOKEN = 'ports'
 HOST_TOKEN = 'host'
-BEFORE_SCRIPT_TOKEN = 'before_script'
-AWAIT_FILE_TOKEN = 'await_file'
-AFTER_TOKEN = 'after_script'
 
 
 success_printer = term.Smart_print(term.Style(
