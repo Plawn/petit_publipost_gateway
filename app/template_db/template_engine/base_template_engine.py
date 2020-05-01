@@ -52,6 +52,8 @@ class TemplateEngine(ABC):
         self.exposed_as = self.get_exposed_as()
 
     def get_exposed_as(self):
+        """To ensure that we don't have name collision when using it with multiple buckets
+        """
         return f'{self.pull_infos.remote.bucket}/{self.pull_infos.remote.filename}'
 
     @classmethod

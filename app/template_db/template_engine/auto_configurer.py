@@ -3,6 +3,7 @@ import threading
 from typing import *
 import uuid
 
+
 def check_live_func() -> bool:
     """Can raise Exception
     """
@@ -57,12 +58,12 @@ class AutoConfigurer:
         self.force_configure_lock = threading.Lock()
         self.force_configure_queue = []
 
-        self.init()
+        self.__init()
 
         if mount:
             self.__mount()
 
-    def init(self) -> None:
+    def __init(self) -> None:
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
 
@@ -77,13 +78,21 @@ class AutoConfigurer:
             self.configuring = False
 
     def is_up(self) -> bool:
+        """Returns wether the service is up or not
+        """
         return self.up
 
     def is_configuring(self) -> bool:
+        """Returns wether the service is being configured or not
+        """
         return self.configuring
 
     def force_configure(self, schedule_full: bool) -> None:
-        """force trigger a check of the current configuration
+        """
+        force trigger a check of the current configuration
+
+        If the service is already being configured then it will wait for 
+        the end of the configuration without actually triggering another configuration
         """
         if not self.configuring:
             # if we are not configuring we acquire the lock
@@ -106,7 +115,6 @@ class AutoConfigurer:
                 if not self.up:
                     raise FailedToConfigure(f'{self}')
 
-
     def run(self):
         while not self.stopped:
             self.event.wait(base_check_up_time)
@@ -119,7 +127,7 @@ class AutoConfigurer:
                     self.configuring = True
 
                     # to bind other actions cleanly
-                    self.run_pre_hooks()
+                    self.__run_pre_hooks()
 
                     self.configure()
                     self.up = True
@@ -130,12 +138,12 @@ class AutoConfigurer:
                         self.full_reload_scheduled = False
 
                     # to bind other actions cleanly
-                    self.run_post_hooks()
+                    self.__run_post_hooks()
                 else:
                     self.up = True
                     logging.info(f'service is up | {self.name}')
                     logging.info(f'running check hooks')
-                    self.run_on_check_hooks()
+                    self.__run_on_check_hooks()
             except FailedToConfigure:
                 self.up = False
                 logging.error(f'failed to configure service | {self.name}')
@@ -146,8 +154,11 @@ class AutoConfigurer:
                 self.configuring = False
 
     def stop(self):
+        """To stop the worker
+        """
         self.stopped = True
         self.event.set()
+
 
     def __run_hooks(self, hooks: dict):
         for name, hook in hooks.items():
@@ -156,20 +167,26 @@ class AutoConfigurer:
             except Exception as e:
                 logging.warning(f'Hook {name} failed | {e}')
 
-    def run_pre_hooks(self):
+    def __run_pre_hooks(self):
         self.__run_hooks(self.pre_conf_hooks)
 
-    def run_post_hooks(self):
+    def __run_post_hooks(self):
         self.__run_hooks(self.post_conf_hooks)
 
-    def run_on_check_hooks(self):
+    def __run_on_check_hooks(self):
         self.__run_hooks(self.on_check_hooks)
 
     def register_post_hook(self, name: str, func: configure_func):
+        """Registers a hook to be executed just after the configuration
+        """
         self.post_conf_hooks[name] = func
 
     def register_pre_hook(self, name: str, func: configure_func):
+        """Registers a hook to be executed just before the configuration
+        """
         self.pre_conf_hooks[name] = func
 
     def register_on_check_hook(self, name: str, func: configure_func):
+        """Registers a hook to be executed just after the `up_check` returns `True`
+        """
         self.on_check_hooks[name] = func

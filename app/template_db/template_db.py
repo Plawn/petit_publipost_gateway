@@ -15,7 +15,6 @@ from .template_engine import TemplateEngine, template_engines
 from .template_engine.model_handler.utils import from_strings_to_dict
 from .template_engine.ReplacerMiddleware import FuncReplacer, MultiReplacer
 from .templator import Templator
-from .utils import error_printer, success_printer
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
