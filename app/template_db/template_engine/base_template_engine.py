@@ -43,13 +43,17 @@ class TemplateEngine(ABC):
     __auto_checker: AutoConfigurer = None
 
     @abstractmethod
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
         self.model: Model = None
         self.pull_infos = pull_infos
         self.replacer = replacer
         self.pulled_at = NEVER_PULLED
         self.filename = filename
+
         self.exposed_as = self.get_exposed_as()
+
+        self.performing_init = False
+        self.__init_lock = threading.Lock()
 
     def get_exposed_as(self):
         """To ensure that we don't have name collision when using it with multiple buckets
@@ -156,12 +160,9 @@ class TemplateEngine(ABC):
     def list(cls):
         return requests.get(cls.url + '/list').json()
 
-    def reconfigure(self, full=False):
-        self.__auto_checker.force_configure(not full)
-        if full:
-            self._re_register_templates()
-        else:
-            self.init()
+    def reconfigure(self):
+        self.__auto_checker.force_configure(False)
+        self.init()
 
     @abstractmethod
     def _load_fields(self, fields: List[str] = None) -> None:
@@ -170,20 +171,30 @@ class TemplateEngine(ABC):
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
-        try :
-            if not self.is_up():
-                self.reconfigure()
-            res = requests.post(self.url + '/load_templates',
-                                json=[{
-                                    'bucket_name': self.pull_infos.remote.bucket,
-                                    'template_name': self.pull_infos.remote.filename,
-                                    'exposed_as': self.exposed_as
-                                }]).json()
-            successes = res['success']
-            if len(res['success']) < 1:
-                raise Exception(f'failed to import {self.filename}')
-            fields = successes[0]['fields']
-            self._load_fields(fields)
-            self.pulled_at = time.time()
-        except:
-            self.pulled_at = NEVER_PULLED
+        if not self.performing_init:    
+            with self.__init_lock:
+                self.performing_init = True
+                try:
+                    if not self.is_up():
+                        self.reconfigure()
+                    res = requests.post(
+                        self.url + '/load_templates',
+                        json=[{
+                            'bucket_name': self.pull_infos.remote.bucket,
+                            'template_name': self.pull_infos.remote.filename,
+                            'exposed_as': self.exposed_as
+                        }]).json()
+                    successes = res['success']
+                    if len(res['success']) < 1:
+                        raise Exception(f'Failed to import {self.filename}')
+                    fields = successes[0]['fields']
+                    self._load_fields(fields)
+                    self.pulled_at = time.time()
+                except:
+                    self.pulled_at = NEVER_PULLED
+                finally:
+                    self.performing_init = False
+        else:
+            with self.__init_lock:
+                if not self.is_up():
+                    raise Exception(f'Failed to init {self.filename}')

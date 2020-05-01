@@ -101,8 +101,6 @@ class TemplateDB:
                     engine.register(settings, name)
                     logging.info(f'Successfuly registered "{name}" handler')
                 except Exception as e:
-                    # error_printer(
-                    #     f'Failed to register server {engine}')
                     logging.error(e)
             else:
                 logging.error(
@@ -124,7 +122,6 @@ class TemplateDB:
                     self.engines
                 )
             except Exception as e:
-                error_printer(e.__str__())
                 traceback.print_exc()
 
     def to_json(self):

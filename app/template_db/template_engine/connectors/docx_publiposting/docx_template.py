@@ -33,13 +33,12 @@ class DocxTemplator(TemplateEngine):
     """
     requires_env = []
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, temp_dir: str, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
         DocxTemplator.registered_templates.append(self)
-        super().__init__(filename, pull_infos, replacer, temp_dir, settings)
+        super().__init__(filename, pull_infos, replacer, settings)
 
         # easier for now
         self.settings = Settings(settings['host'], settings['secure'])
-        self.temp_dir = temp_dir
 
     def _load_fields(self, fields: List[str] = None) -> None:
         if fields is None:

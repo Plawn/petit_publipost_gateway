@@ -16,7 +16,6 @@ from .template_engine import NEVER_PULLED, TemplateEngine, template_engines
 from .template_engine.model_handler.utils import change_keys
 from .template_engine.ReplacerMiddleware import MultiReplacer
 
-TEMP_FOLDER = 'temp'
 ENSURE_KEYS = 'ensure_keys'
 
 
@@ -48,21 +47,8 @@ class Templator:
         self.time_delta = time_delta
         self.replacer = replacer
         self.engine_settings = engine_settings
-        self.temp_folder = os.path.join(
-            self.local_template_directory, TEMP_FOLDER)
         self.verbose = True
         self.available_engines: Dict[str, TemplateEngine] = available_engines
-
-        self.__init_cache()
-
-    # should be deprecated too
-
-    def __init_cache(self):
-        # removing cache on startup
-        if os.path.exists(self.local_template_directory):
-            shutil.rmtree(self.local_template_directory)
-        os.mkdir(self.local_template_directory)
-        os.mkdir(self.temp_folder)
 
     def pull_template(self, filename: str) -> List[str]:
         """Downloading and caching one template from Minio
@@ -76,7 +62,7 @@ class Templator:
                 self.remote_template_bucket, filename), self.minio_instance)
             if ext in self.available_engines:
                 template = self.available_engines[ext](filename,
-                                                       pull_infos, self.replacer, self.temp_folder, self.engine_settings[ext])
+                                                       pull_infos, self.replacer, self.engine_settings[ext])
                 self.templates[name] = template
                 template.init()
                 if self.verbose:
