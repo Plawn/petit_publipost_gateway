@@ -37,5 +37,5 @@ class XlsxTemplator(TemplateEngine):
     def _load_fields(self, fields: List[str] = None) -> None:
         res = requests.post(self.url + '/get_placeholders',
                             json={'name': self.exposed_as}).json()
-        res = [(i, {}) for i in res]
+        res = [self.replacer.from_doc(i) for i in res]
         self.model = Model(res, self.replacer, SYNTAX_KIT)
