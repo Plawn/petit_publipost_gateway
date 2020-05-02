@@ -34,13 +34,13 @@ class Templator:
         - 'push to minio'
     """
 
-    def __init__(self, minio_instance: minio.Minio, temp_dir: str, minio_path: MinioPath,
+    def __init__(self, minio_instance: minio.Minio, minio_path: MinioPath,
                  output_path: MinioPath, time_delta: datetime.timedelta,
                  replacer: MultiReplacer, engine_settings: dict,
                  available_engines: Dict[str, TemplateEngine], logger: logging.Logger):
         self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
-            temp_dir, self.remote_template_bucket)
+            'temp', self.remote_template_bucket)
         self.output_path = output_path
         self.templates: Dict[str, TemplateEngine] = {}
         self.minio_instance = minio_instance

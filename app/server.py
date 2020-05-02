@@ -8,20 +8,26 @@ import json
 import os
 import shutil
 import traceback
-from datetime import timedelta
-from typing import Dict, Union, List
 from dataclasses import dataclass
+from datetime import timedelta
+from typing import Dict, List, Union
 
 import yaml
 from flask import Flask, jsonify, request
 
-from .ressources import TEMP_DIR, template_db
-from .template_db import MinioCreds, MinioPath, TemplateDB, from_strings_to_dict, template_engine, RenderOptions, ENSURE_KEYS
+from .ressources import template_db
+from .template_db import (ENSURE_KEYS, MinioCreds, MinioPath, RenderOptions,
+                          TemplateDB, from_strings_to_dict, template_engine)
 from .template_db.template_engine.base_template_engine import EngineDown
 
-default_options = RenderOptions(push_result=True, compile_options=[ENSURE_KEYS], transform_data=True)
+default_options = RenderOptions(push_result=True, compile_options=[
+                                ENSURE_KEYS], transform_data=True)
 
 app = Flask(__name__)
+
+
+def make_error(msg: str, code=500):
+    return jsonify({'error': msg}), code
 
 
 def using_loaded_db(func):
@@ -29,14 +35,11 @@ def using_loaded_db(func):
 
     def f(*args, **kwargs):
         if template_db.loading:
-            return jsonify({'error': 'db is not loaded'}), 400
+            return make_error('db is not loaded', code=400)
         return func(*args, **kwargs)
     f.__name__ = name
     return f
 
-
-def make_error(msg:str, code=500):
-    return jsonify({'error':msg}), code
 
 @app.route('/document', methods=['GET'])
 @using_loaded_db
@@ -50,7 +53,7 @@ def get_all_documents_from_type(_type: str):
     if _type in template_db.templators:
         return jsonify(template_db.templators[_type].to_json())
     else:
-        return jsonify({'error': 'Type not found'}), 404
+        return make_error('Type not found', 404)
 
 
 @app.route('/document/<_type>/<name>', methods=['GET'])
@@ -61,9 +64,9 @@ def get_fields_document(_type: str, name: str):
         # check if template name exists
         if name in template_db.templators[_type].templates:
             return jsonify(template_db.templators[_type].templates[name].get_fields())
-        return jsonify({'error': 'Template does not exists'}), 404
+        return make_error('Template not found', 404)
     else:
-        return jsonify({'error': 'Type not found'}), 404
+        return make_error('Type not found', 404)
 
 
 # das working
@@ -101,22 +104,22 @@ def publipost_document():
     _type: str = form['type']
     document_name: str = form['template_name']
     filename: str = form['filename']
-    options:RenderOptions = form.get('options', default_options)
+    options: RenderOptions = form.get('options', default_options)
     data = form['data']
-    
 
     if options.transform_data:
         data: Dict[str, object] = from_strings_to_dict(data)
     # if we want to get the result back directly we can set the push_result to False
     # for email rendering we will use the push_result option
-    try :
+    try:
         return jsonify({
-        'result': template_db.render_template(_type, document_name, data, filename, options)
-    })
+            'result': template_db.render_template(_type, document_name, data, filename, options)
+        })
     except EngineDown:
         return make_error('Engine down')
     except:
-        import traceback; traceback.print_exc();
+        import traceback
+        traceback.print_exc()
         return make_error('Unknown error')
 
 
@@ -136,8 +139,9 @@ def status():
         engine_name: (engine_name in template_db.engines and engine.is_up()) for engine_name, engine in template_engine.template_engines.items()
     })
 
+
 @app.route('/status/<engine_name>', methods=['GET'])
-def engine_status(engine_name:str):
+def engine_status(engine_name: str):
     engine = template_db.engines[engine_name]
     if engine_name in template_db.engines and engine.is_up():
         return 'OK', 200

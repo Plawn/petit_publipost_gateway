@@ -33,8 +33,8 @@ class TemplateDB:
     """Holds everything to publipost all types of templates
     """
 
-    def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta, temp_folder: str,
-                 minio_creds: MinioCreds, node_transformer: MultiReplacer, cache_validation_interval=-1, logger:logging.Logger=None):
+    def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta,
+                 minio_creds: MinioCreds, node_transformer: MultiReplacer, cache_validation_interval=-1, logger: logging.Logger = None):
         self.minio_creds = minio_creds
         self.minio_instance = minio.Minio(
             self.minio_creds.host,
@@ -42,7 +42,7 @@ class TemplateDB:
             secret_key=self.minio_creds.password,
             secure=self.minio_creds.secure
         )
-        if logger is None :
+        if logger is None:
             logger = logging.getLogger('TemplateDB logger')
         self.logger = logger
         # doing this to check if the minio instance is correct
@@ -50,7 +50,6 @@ class TemplateDB:
             raise Exception('Invalid minio creds')
         self.manifest: Dict[str, Dict[str, str]] = manifest
         self.replacer = node_transformer
-        self.temp_folder = temp_folder
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
@@ -102,9 +101,11 @@ class TemplateDB:
             if ok:
                 try:
                     engine.register(settings, name, self.logger)
-                    self.logger.info(f'Successfuly registered "{name}" handler')
+                    self.logger.info(
+                        f'Successfuly registered "{name}" handler')
                 except Exception as e:
-                    import traceback; traceback.print_exc();
+                    import traceback
+                    traceback.print_exc()
                     self.logger.error(e)
             else:
                 self.logger.error(
@@ -117,7 +118,6 @@ class TemplateDB:
             try:
                 self.templators[settings['type']] = Templator(
                     self.minio_instance,
-                    self.temp_folder,
                     MinioPath(bucket_name),
                     MinioPath(settings[OUTPUT_DIRECTORY_TOKEN]),
                     self.time_delta,

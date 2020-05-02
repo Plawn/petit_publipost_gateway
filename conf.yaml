@@ -6,7 +6,7 @@ MINIO_PASS: adminadmin
 SECURE: true
 
 engine_settings:
-  docx: 
+  docx:
     host: localhost:3002
     secure: false
   xlsx:

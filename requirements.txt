@@ -1,6 +1,6 @@
-flask
+flask==1.1.2
 minio
 pyyaml
 requests
 Fancy_term
-gevent
+gevent==20.5.0

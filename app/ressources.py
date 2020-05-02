@@ -13,7 +13,6 @@ from .template_db.utils import conf_loader
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
-TEMP_DIR = 'temp'
 MANIFEST_TOKEN = 'manifest'
 
 CACHE_VALIDATION_INTERVAL = 60
@@ -21,14 +20,6 @@ CACHE_VALIDATION_INTERVAL = 60
 PHOENIX_NODE_TRANSFORMER = MultiReplacer([
     FuncReplacer
 ])
-
-# should be somewhere else
-# preparing temp dir
-if os.path.exists(TEMP_DIR):
-    print(f'deleting temp dir {TEMP_DIR}')
-    shutil.rmtree(TEMP_DIR)
-os.mkdir(TEMP_DIR)
-
 
 try:
     conf_filename: str = os.environ['CONF_FILE']
@@ -53,7 +44,6 @@ template_db = TemplateDB(
     manifest,
     engine_settings,
     TIME_DELTA,
-    TEMP_DIR,
     minio_creds,
     node_transformer=PHOENIX_NODE_TRANSFORMER,
     cache_validation_interval=CACHE_VALIDATION_INTERVAL
