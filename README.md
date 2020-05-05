@@ -69,6 +69,8 @@ manifest:
     type: phoenix
 ```
 
+#### Ne pas oublier de mettre des templates dans le bucket indiqué dans votre fichier de configuration
+
 ## Summary
 
 Pourquoi api-doc2 ?
@@ -205,6 +207,6 @@ Il faut donc gérer le reload du cache. ça se fait avec l'endpoint "/reload"
 
 ## Pistes d'améliorations :
 
-- Changer la façon dont sont register les engines
-- Mettre à jour automatiquement le cache
-- Ajouter un moteur de PPT
+- [x] Changer la façon dont sont register les engines
+- [x] Mettre à jour automatiquement le cache
+- [x] Ajouter un moteur de PPT
