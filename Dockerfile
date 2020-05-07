@@ -1,4 +1,5 @@
-FROM python:3.7.2-slim
+# FROM python:3.7.2-slim
+FROM 3.8.2-alpine3.10
 
 WORKDIR /api
 
