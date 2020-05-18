@@ -12,7 +12,7 @@ from ...ReplacerMiddleware import MultiReplacer
 
 EXT = '.pptx'
 
-SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
+SYNTAX_KIT = SyntaxtKit('{{', '}}')
 
 
 @dataclass

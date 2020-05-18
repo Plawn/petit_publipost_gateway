@@ -17,7 +17,7 @@ engine_settings:
     secure: false
 
 manifest:
-  ppp:
+  new-templates:
     output_bucket: temporary
     # thats the name under which the document will be accessible
     type: phoenix

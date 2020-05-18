@@ -13,7 +13,7 @@ from ....template_db import RenderOptions, ConfigOptions
 from ...model_handler import Model, SyntaxtKit
 from ...ReplacerMiddleware import MultiReplacer
 
-SYNTAX_KIT = SyntaxtKit('{{', '}}', '.')
+SYNTAX_KIT = SyntaxtKit('{{', '}}')
 
 
 @dataclass

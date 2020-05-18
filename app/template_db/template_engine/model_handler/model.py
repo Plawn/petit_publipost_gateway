@@ -12,15 +12,14 @@ class SyntaxtKit:
     """Used with a model to make it able to reconstruct missing placeholders
     """
 
-    def __init__(self, start: str, end: str, sep: str):
+    def __init__(self, start: str, end: str):
         self.start = start
         self.end = end
-        self.sep = sep
 
 
 StringAndInfos = List[Tuple[str, Dict[str, str]]]
 
-BASE_KIT = SyntaxtKit('{{', '}}', '.')
+BASE_KIT = SyntaxtKit('{{', '}}')
 
 
 class Model:
@@ -54,7 +53,7 @@ class Model:
         """
         res = {}
         for string, infos in strings_and_info:
-            l = string.split(self.syntax.sep)
+            l = string.split('.')
             previous = []
             end = len(l) - 1
             for i, item in enumerate(l):
