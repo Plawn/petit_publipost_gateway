@@ -30,25 +30,13 @@ def make_error(msg: str, code=500):
     return jsonify({'error': msg}), code
 
 
-def using_loaded_db(func):
-    name = func.__name__
-
-    def f(*args, **kwargs):
-        if template_db.loading:
-            return make_error('db is not loaded', code=400)
-        return func(*args, **kwargs)
-    f.__name__ = name
-    return f
-
 
 @app.route('/document', methods=['GET'])
-@using_loaded_db
 def get_all():
     return jsonify(template_db.to_json())
 
 
 @app.route('/document/<_type>', methods=['GET'])
-@using_loaded_db
 def get_all_documents_from_type(_type: str):
     if _type in template_db.templators:
         return jsonify(template_db.templators[_type].to_json())
@@ -57,7 +45,6 @@ def get_all_documents_from_type(_type: str):
 
 
 @app.route('/document/<_type>/<name>', methods=['GET'])
-@using_loaded_db
 def get_fields_document(_type: str, name: str):
     # check if type exists
     if _type in template_db.templators:
@@ -97,7 +84,6 @@ def reload_all_documents():
 
 
 @app.route('/publipost', methods=['POST'])
-@using_loaded_db
 def publipost_document():
     form: Dict[str, Union[str, Dict[str, str]]] = request.get_json()
 
