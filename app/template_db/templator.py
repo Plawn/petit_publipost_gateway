@@ -85,7 +85,7 @@ class Templator:
             f'Initialising templates from bucket "{self.remote_template_bucket}"')
 
         filenames = (obj.object_name for obj in self.minio_instance.list_objects(
-            self.remote_template_bucket, recursive=True))
+            self.remote_template_bucket))
         successes, fails = [], []
         for filename in filenames:
             try:
@@ -133,7 +133,7 @@ class Templator:
         """
         modified_at = (
             (obj.object_name, obj.last_modified.timestamp())
-            for obj in self.minio_instance.list_objects(self.remote_template_bucket, recursive=True)
+            for obj in self.minio_instance.list_objects(self.remote_template_bucket)
         )
         # TODO: should cache this after
         loaded_filenames: Dict[str, TemplateEngine] = {

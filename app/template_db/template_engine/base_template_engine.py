@@ -37,14 +37,14 @@ class TemplateEngine(ABC):
     registered_templates: List[TemplateEngine] = []
     url = ''
     ext = ''
-    logger:logging.Logger = None
+    logger: logging.Logger = None
     __conf: ConfigOptions = None
 
     __auto_checker: AutoConfigurer = None
 
     @abstractmethod
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
-        
+
         self.model: Model = None
         self.pull_infos = pull_infos
         self.replacer = replacer
@@ -70,7 +70,7 @@ class TemplateEngine(ABC):
         return len(missing_keys) == 0, missing_keys
 
     @classmethod
-    def register(cls, env: ConfigOptions, ext: str, logger:logging.Logger) -> None:
+    def register(cls, env: ConfigOptions, ext: str, logger: logging.Logger) -> None:
         cls.__conf = env
         cls.ext = ext
         cls.logger = logger
@@ -163,9 +163,10 @@ class TemplateEngine(ABC):
     def list(cls):
         return requests.get(cls.url + '/list').json()
 
-    def reconfigure(self):
+    def reconfigure(self, init=True):
         self.__auto_checker.force_configure(False)
-        self.init()
+        if init:
+            self.init()
 
     @abstractmethod
     def _load_fields(self, fields: List[str] = None) -> None:
@@ -174,12 +175,12 @@ class TemplateEngine(ABC):
     def init(self) -> None:
         """Loads the document from the filename and inits it's values
         """
-        if not self.performing_init:    
+        if not self.performing_init:
             with self.__init_lock:
                 self.performing_init = True
                 try:
                     if not self.is_up():
-                        self.reconfigure()
+                        self.reconfigure(init=False)
                     res = requests.post(
                         self.url + '/load_templates',
                         json=[{
