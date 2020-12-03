@@ -84,7 +84,7 @@ def reload_all_documents():
 
 
 class PubliPostBody(BaseModel):
-    _type: str
+    type: str
     document_name: str
     filename: str
     options: Optional[RenderOptions]
@@ -102,7 +102,7 @@ def publipost_document(body: PubliPostBody):
     # for email rendering we will use the push_result option
     try:
         return {
-            'result': template_db.render_template(body._type, body.document_name, data, body.filename, options)
+            'result': template_db.render_template(body.type, body.document_name, data, body.filename, options)
         }
     except EngineDown:
         return make_error('Engine down')
