@@ -7,19 +7,13 @@ from typing import Dict
 import yaml
 
 from .template_db import MinioCreds, TemplateDB
-from .template_db.template_engine.ReplacerMiddleware import (FuncReplacer,
-                                                             MultiReplacer)
+from .transformers import PHOENIX_NODE_TRANSFORMER
 from .template_db.utils import conf_loader
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
 MANIFEST_TOKEN = 'manifest'
 
-CACHE_VALIDATION_INTERVAL = 60
-
-PHOENIX_NODE_TRANSFORMER = MultiReplacer([
-    FuncReplacer
-])
 
 try:
     conf_filename: str = os.environ['CONF_FILE']
@@ -31,14 +25,11 @@ with open(conf_filename, 'r') as f:
 
 manifest = conf[MANIFEST_TOKEN]
 
-minio_creds = MinioCreds(
-    conf['MINIO_HOST'],
-    conf['MINIO_KEY'],
-    conf['MINIO_PASS'],
-    conf['SECURE'],
-)
+minio_creds = MinioCreds(**conf['minio'])
 
 engine_settings = conf['engine_settings']
+cache_validation_interval: float = conf['cache_validation_interval']
+
 
 template_db = TemplateDB(
     manifest,
@@ -46,14 +37,6 @@ template_db = TemplateDB(
     TIME_DELTA,
     minio_creds,
     node_transformer=PHOENIX_NODE_TRANSFORMER,
-    cache_validation_interval=CACHE_VALIDATION_INTERVAL
+    cache_validation_interval=cache_validation_interval
 )
 
-
-def load_db():
-    template_db.full_init()
-
-
-# async initialization
-t = threading.Thread(target=load_db)
-t.start()

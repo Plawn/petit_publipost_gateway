@@ -1,23 +1,22 @@
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import List, Dict, Tuple, Set, Iterable
+from typing import Any, Dict, Iterable, List, Set, Tuple, Callable
 
 from ..ReplacerMiddleware import MultiReplacer
 
 
-class FallbackAction:
+class FallbackAction(ABC):
     def __init__(self, field_name: str, replacer: MultiReplacer):
         self.field_name = field_name
+        self.replacer = replacer
 
+    @abstractmethod
     def prepare_fallback(self, _dict: dict, key: str) -> None:
         pass
 
 
 # ugly name i know
 class MissingPlaceholderFallbackAction(FallbackAction):
-    def __init__(self, field_name: str, replacer: MultiReplacer):
-        super().__init__(field_name, replacer)
-        self.replacer = replacer
-
     def prepare_fallback(self, _dict: dict, key: str) -> None:
         """
         Prevents error by recreating the missing keys in the input data, 
@@ -52,7 +51,7 @@ def ensure_keys(d: dict, fallback_action: FallbackAction):
                 ensure_keys(item, fallback_action)
 
 
-def change_keys(obj: dict, convert: callable) -> dict:
+def change_keys(obj: dict, convert: Callable) -> dict:
     """
     Recursively goes through the dictionary obj and replaces keys with the convert function.
     """
@@ -82,10 +81,12 @@ def prepare_names(strings: Iterable[str]) -> Dict[str, List[str]]:
             d[top_level].add(rest)
         else:
             d[top_level] = {rest}
-    return {i: list(j) for i, j in d.items()}
+    return {
+        i: list(j) for i, j in d.items()
+    }
 
 
-def from_strings_to_dict(data: Dict[str, str]):
+def from_strings_to_dict(data: Dict[str, Any]):
     """
     Makes a model for a given list of string like :
 
@@ -106,10 +107,8 @@ def from_strings_to_dict(data: Dict[str, str]):
         end = len(l) - 1
         for i, item in enumerate(l):
             d = res
-            last_node = None
             for prev in previous[:-1]:
                 d = d[prev]
-                last_node = d
 
             if len(previous) > 0:
                 d = d[previous[-1]]

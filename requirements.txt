@@ -1,6 +1,6 @@
-flask==1.1.2
+fastapi[all]
+uvicorn
 minio
 pyyaml
 requests
 Fancy_term
-gevent==20.5.0

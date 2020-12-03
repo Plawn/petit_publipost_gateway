@@ -1,19 +1,18 @@
 import logging
 import threading
 from typing import *
-import uuid
 
 
 def check_live_func() -> bool:
     """Can raise Exception
     """
-    pass
+    ...
 
 
 def configure_func() -> None:
     """Can raise Exception
     """
-    pass
+    ...
 
 
 base_check_up_time = 30
@@ -36,25 +35,33 @@ class AutoConfigurer:
     :param check_up_time: time between checks, default 30 seconds
     """
 
-    def __init__(self, name: str, check_live: check_live_func, configure: configure_func, logger: logging.Logger,
-                 post_configuration: configure_func = None,  mount=True, check_up_time=base_check_up_time):
+    def __init__(
+        self,
+        name: str,
+        check_live: check_live_func,
+        configure: configure_func,
+        logger: logging.Logger,
+        post_configuration: Optional[configure_func] = None,
+        mount: bool = True,
+        check_up_time: float = base_check_up_time
+    ):
         self.name = name
         self.event = threading.Event()
-        self.check_live = check_live
+        self.check_live: check_live_func = check_live
         self.configure = configure
-        self.check_up_time = check_up_time
+        self.check_up_time: float = check_up_time
         self.post_configuration = post_configuration
-        self.up = False
-        self.stopped = False
-        self.thread: threading.Thread = None
-        self.configuring = True
+        self.up: bool = False
+        self.stopped: bool = False
+        self.thread: Optional[threading.Thread] = None
+        self.configuring: bool = True
         self.logger = logger
 
         self.full_reload_scheduled = False
 
-        self.post_conf_hooks = {}
-        self.pre_conf_hooks = {}
-        self.on_check_hooks = {}
+        self.post_conf_hooks: Dict[str, configure_func] = {}
+        self.pre_conf_hooks: Dict[str, configure_func] = {}
+        self.on_check_hooks: Dict[str, configure_func] = {}
 
         self.force_configure_lock = threading.Lock()
         self.force_configure_queue = []
@@ -65,7 +72,7 @@ class AutoConfigurer:
             self.__mount()
 
     def __init(self) -> None:
-        self.thread = threading.Thread(target=self.run)
+        self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
 
     def __mount(self) -> None:

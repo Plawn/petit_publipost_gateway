@@ -1,11 +1,8 @@
-import json
 import logging
-import os
-import subprocess
 import threading
 import traceback
 from datetime import timedelta
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 import minio
 
@@ -13,7 +10,7 @@ from .data_objects import ConfigOptions, RenderOptions
 from .minio_creds import MinioCreds, MinioPath
 from .template_engine import TemplateEngine, template_engines
 from .template_engine.model_handler.utils import from_strings_to_dict
-from .template_engine.ReplacerMiddleware import FuncReplacer, MultiReplacer
+from .template_engine.ReplacerMiddleware import MultiReplacer
 from .templator import Templator
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
@@ -21,7 +18,7 @@ OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 # placeholder for now
 
 
-def check_minio_instance(minio_instance: minio.Minio):
+def check_minio_instance(minio_instance: minio.Minio) -> bool:
     try:
         res = minio_instance.list_buckets()
         return True
@@ -33,37 +30,39 @@ class TemplateDB:
     """Holds everything to publipost all types of templates
     """
 
-    def __init__(self, manifest: dict, engine_settings: dict, time_delta: timedelta,
-                 minio_creds: MinioCreds, node_transformer: MultiReplacer, cache_validation_interval=-1, logger: logging.Logger = None):
-        self.minio_creds = minio_creds
-        self.minio_instance = minio.Minio(
-            self.minio_creds.host,
-            access_key=self.minio_creds.key,
-            secret_key=self.minio_creds.password,
-            secure=self.minio_creds.secure
-        )
-        if logger is None:
-            logger = logging.getLogger('TemplateDB logger')
-        self.logger = logger
+    def __init__(
+        self,
+        manifest: dict,
+        engine_settings: dict,
+        time_delta: timedelta,
+        minio_creds: MinioCreds,
+        node_transformer: Optional[MultiReplacer] = None,
+        cache_validation_interval: float = -1,
+        logger: Optional[logging.Logger] = None
+    ):
+        self.minio_creds: MinioCreds = minio_creds
+        self.minio_instance = self.minio_creds.as_client()
+        self.logger = logger or logging.getLogger(
+            f'TemplateDB_logger{id(self)}')
         # doing this to check if the minio instance is correct
         if not check_minio_instance(self.minio_instance):
             raise Exception('Invalid minio creds')
         self.manifest: Dict[str, Dict[str, str]] = manifest
-        self.replacer = node_transformer
+        self.replacer: MultiReplacer = node_transformer or MultiReplacer([])
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
         self.engine_settings = engine_settings
         self.engines: Dict[str, TemplateEngine] = None
-        self.loading = True
-        self.cache_handler: threading.Thread = None
+        self.loading: bool = True
+        self.cache_handler: Optional[threading.Thread] = None
         self.lock = threading.RLock()
         # default for now
         # TODO: set it as a setting
-        self.cache_validation_interval = cache_validation_interval
+        self.cache_validation_interval: float = cache_validation_interval
 
-        self.__first_loaded = False
+        self.__first_loaded: bool = False
 
-    def full_init(self):
+    def init(self):
         if self.__first_loaded:
             raise Exception('Already initialized')
         self.loading = True
@@ -71,7 +70,7 @@ class TemplateDB:
         self.load_templates()
 
         if self.cache_validation_interval != -1:
-            self.start_cache_handler()
+            self.__start_cache_handler()
         self.loading = False
 
         self.__first_loaded = True
@@ -134,23 +133,24 @@ class TemplateDB:
             name: templator.to_json() for name, templator in self.templators.items()
         }
 
-    def handle_cache(self):
+    def __handle_cache(self):
         for templator in self.templators.values():
             try:
                 templator.handle_cache()
             except:
                 self.logger.error(f'Failed to handle cache for {templator}')
 
-    def start_cache_handler(self):
+    def __start_cache_handler(self):
         e = threading.Event()
         time_between_checks = self.cache_validation_interval
 
         def f():
             self.logger.info(
-                f'cache handler started, will run every {time_between_checks}')
+                f'cache handler started, will run every {time_between_checks}'
+            )
             while True:
-                self.handle_cache()
+                self.__handle_cache()
                 e.wait(time_between_checks)
-        t = threading.Thread(target=f)
+        t = threading.Thread(target=f, daemon=True)
         t.start()
         self.cache_handler = t

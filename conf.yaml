@@ -1,9 +1,13 @@
 # should be imported from the minio creds conf file
 
-MINIO_HOST: documents.staging.juniorisep.com
-MINIO_KEY: adminadmin
-MINIO_PASS: adminadmin
-SECURE: true
+
+minio:
+  host: documents.staging.juniorisep.com
+  accessKey: adminadmin
+  passKey: adminadmin
+  secure: true
+
+cache_validation_interval: 60
 
 engine_settings:
   docx:

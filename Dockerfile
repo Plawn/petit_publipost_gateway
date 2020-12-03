@@ -11,4 +11,4 @@ COPY . .
 EXPOSE 5000
 
 # need to add a real wsgi server after
-ENTRYPOINT ["python3", "start.py", "5000"]
+ENTRYPOINT ["CONF_FILE=conf.yaml", "uvicorn", "app.server:app", "--port 5000"]

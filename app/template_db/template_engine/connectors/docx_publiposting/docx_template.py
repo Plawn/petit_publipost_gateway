@@ -3,7 +3,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Dict, Generator, List, Set, Union
+from typing import Dict, Generator, List, Optional, Set, Union
 
 import requests
 
@@ -40,7 +40,7 @@ class DocxTemplator(TemplateEngine):
         # easier for now
         self.settings = Settings(settings['host'], settings['secure'])
 
-    def _load_fields(self, fields: List[str] = None) -> None:
+    def _load_fields(self, fields: Optional[List[str]] = None) -> None:
         if fields is None:
             res = requests.post(self.url + '/get_placeholders',
                                 json={'name': self.exposed_as}).json()

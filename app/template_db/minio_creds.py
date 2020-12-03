@@ -1,13 +1,23 @@
 """Minio Stuff
 """
 import minio
+from minio import Minio
+
 
 class MinioCreds:
-    def __init__(self, host: str, key: str, password: str, secure:bool):
-        self.key = key
-        self.password = password
+    def __init__(self, host: str, accessKey: str, passKey: str, secure: bool):
+        self.key = accessKey
+        self.password = passKey
         self.host = host
         self.secure = secure
+
+    def as_client(self) -> Minio:
+        return minio.Minio(
+            self.host,
+            access_key=self.key,
+            secret_key=self.password,
+            secure=self.secure
+        )
 
 
 class MinioPath:

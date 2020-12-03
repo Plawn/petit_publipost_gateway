@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
 from ..ReplacerMiddleware import MultiReplacer
@@ -11,6 +11,7 @@ from .utils import MissingPlaceholderFallbackAction
 class SyntaxtKit:
     """Used with a model to make it able to reconstruct missing placeholders
     """
+    __slots__ = ('start', 'end')
 
     def __init__(self, start: str, end: str):
         self.start = start
@@ -32,7 +33,7 @@ class Model:
         self.replacer = replacer
         self.fallback_action = MissingPlaceholderFallbackAction(
             FIELD_NAME_OPTION, self.replacer)
-        
+
         # should use a better abstraction here
         # phoenix fields
         self.fields = utils.prepare_names((i[0] for i in strings_and_info))
@@ -95,7 +96,7 @@ class Model:
                 previous.append(item)
         self.structure = res
 
-    def merge(self, _input: dict, ensure_keys=True) -> dict:
+    def merge(self, _input: dict, ensure_keys: bool = True) -> Dict[str, Any]:
         """
         """
         d1 = copy.deepcopy(self.structure)
@@ -104,5 +105,5 @@ class Model:
             utils.ensure_keys(d1, self.fallback_action)
         return d1
 
-    def to_json(self) -> dict:
+    def to_json(self) -> Dict[str, Any]:
         return self.structure

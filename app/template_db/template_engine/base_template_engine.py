@@ -9,11 +9,11 @@ import threading
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import requests
 
-from ..minio_creds import MinioPath, PullInformations
+from ..minio_creds import MinioPath, PullInformations, MinioCreds
 from ..template_db import ConfigOptions, RenderOptions
 from .auto_configurer import AutoConfigurer, FailedToConfigure
 from .model_handler import Model, SyntaxtKit
@@ -42,7 +42,6 @@ class TemplateEngine(ABC):
 
     __auto_checker: AutoConfigurer = None
 
-    @abstractmethod
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
 
         self.model: Model = None
@@ -138,7 +137,8 @@ class TemplateEngine(ABC):
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        result = requests.post(self.url + '/publipost', json=data).json()
+        res = requests.post(self.url + '/publipost', json=data)
+        result = res.json()
         if 'error' in result:
             if result['error']:
                 raise Exception('An error has occured')
@@ -154,8 +154,10 @@ class TemplateEngine(ABC):
 
     @classmethod
     def remove_template(cls, template_name: str) -> None:
-        res = requests.delete(cls.url + '/remove_template',
-                              json={'template_name': template_name})
+        res = requests.delete(
+            cls.url + '/remove_template',
+            json={'template_name': template_name}
+        )
         if res.status_code >= 400:
             raise Exception(f'failed to remove template | {res}')
 
@@ -163,14 +165,14 @@ class TemplateEngine(ABC):
     def list(cls):
         return requests.get(cls.url + '/list').json()
 
-    def reconfigure(self, init=True):
+    def reconfigure(self, init: bool = True):
         self.__auto_checker.force_configure(False)
         if init:
             self.init()
 
     @abstractmethod
-    def _load_fields(self, fields: List[str] = None) -> None:
-        pass
+    def _load_fields(self, fields: Optional[List[str]] = None) -> None:
+        ...
 
     def init(self) -> None:
         """Loads the document from the filename and inits it's values

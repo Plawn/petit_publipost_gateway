@@ -1,1 +1,1 @@
-CONF_FILE=conf.yaml python3 start.py 5000
+CONF_FILE=conf.yaml uvicorn app.server:app --reload
