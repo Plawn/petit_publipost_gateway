@@ -6,14 +6,12 @@ from typing import Any, Dict, List, Optional, Set
 
 import minio
 
-from .data_objects import ConfigOptions, RenderOptions
+from .data_objects import ConfigOptions, ManifestEntry, RenderOptions
 from .minio_creds import MinioCreds, MinioPath
 from .template_engine import TemplateEngine, template_engines
 from .template_engine.model_handler.utils import from_strings_to_dict
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .templator import Templator
-
-OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
 
 def check_minio_instance(minio_instance: minio.Minio) -> bool:
@@ -30,8 +28,8 @@ class TemplateDB:
 
     def __init__(
         self,
-        manifest: dict,
-        engine_settings: dict,
+        manifest: Dict[str, ManifestEntry],
+        engine_settings: Dict[str, Any],
         time_delta: timedelta,
         minio_creds: MinioCreds,
         node_transformer: Optional[MultiReplacer] = None,
@@ -45,7 +43,7 @@ class TemplateDB:
         # doing this to check if the minio instance is correct
         if not check_minio_instance(self.minio_instance):
             raise Exception('Invalid minio creds')
-        self.manifest: Dict[str, Dict[str, str]] = manifest
+        self.manifest: Dict[str, ManifestEntry] = manifest
         self.replacer: MultiReplacer = node_transformer or MultiReplacer([])
         self.templators: Dict[str, Templator] = {}
         self.time_delta = time_delta
@@ -116,10 +114,10 @@ class TemplateDB:
     def __init_templators(self):
         for bucket_name, settings in self.manifest.items():
             try:
-                self.templators[settings['type']] = Templator(
+                self.templators[settings.export_name] = Templator(
                     self.minio_instance,
                     MinioPath(bucket_name),
-                    MinioPath(settings[OUTPUT_DIRECTORY_TOKEN]),
+                    MinioPath(settings.output_bucket),
                     self.time_delta,
                     self.replacer,
                     self.engine_settings,

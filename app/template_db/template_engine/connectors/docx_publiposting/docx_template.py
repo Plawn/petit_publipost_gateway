@@ -1,15 +1,10 @@
-import copy
-import json
-import os
-import re
 from dataclasses import dataclass
-from typing import Dict, Generator, List, Optional, Set, Union
+from typing import List, Optional
 
 import requests
 
-from ....minio_creds import MinioCreds, MinioPath, PullInformations
+from ....minio_creds import PullInformations
 from ...base_template_engine import TemplateEngine
-from ....template_db import RenderOptions, ConfigOptions
 from ...model_handler import Model, SyntaxtKit
 from ...ReplacerMiddleware import MultiReplacer
 
@@ -33,18 +28,18 @@ class DocxTemplator(TemplateEngine):
     """
     requires_env = []
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
         DocxTemplator.registered_templates.append(self)
-        super().__init__(filename, pull_infos, replacer, settings)
-
-        # easier for now
-        self.settings = Settings(settings['host'], settings['secure'])
+        super().__init__(filename, pull_infos, replacer)
 
     def _load_fields(self, fields: Optional[List[str]] = None) -> None:
         if fields is None:
-            res = requests.post(self.url + '/get_placeholders',
-                                json={'name': self.exposed_as}).json()
+            res = requests.post(
+                self.url + '/get_placeholders',
+                json={'name': self.exposed_as}
+            ).json()
             fields: List[str] = res
+        
         cleaned = []
         for field in fields:
             field, additional_infos = self.replacer.from_doc(field)

@@ -13,3 +13,8 @@ class RenderOptions:
     push_result: bool
     transform_data: bool
     compile_options: List[str]
+
+@dataclass
+class ManifestEntry:
+    export_name: str
+    output_bucket: str

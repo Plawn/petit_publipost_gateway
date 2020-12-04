@@ -2,12 +2,14 @@
 
 
 minio:
-  host: documents.staging.juniorisep.com
-  accessKey: adminadmin
-  passKey: adminadmin
+  host: <>
+  accessKey: <>
+  passKey: <>
   secure: true
 
-cache_validation_interval: 60
+cache_validation_interval: 60 # cache will be validated every minute
+
+push_result_validity_time: 86400 #seconds, it's a day
 
 engine_settings:
   docx:
@@ -21,7 +23,7 @@ engine_settings:
     secure: false
 
 manifest:
-  ppp:
+  new-templates:
     output_bucket: temporary
     # thats the name under which the document will be accessible
-    type: phoenix
+    export_name: phoenix

@@ -1,39 +1,14 @@
-import os
-from datetime import timedelta
-from typing import Dict
-
-import yaml
-
-from .template_db import MinioCreds, TemplateDB
+from .template_db import TemplateDB
 from .transformers import PHOENIX_NODE_TRANSFORMER
+from .utils import get_settings
 
-# should be env or config variable
-TIME_DELTA = timedelta(days=1)
-MANIFEST_TOKEN = 'manifest'
-
-
-try:
-    conf_filename: str = os.environ['CONF_FILE']
-except:
-    raise Exception('missing "CONF_FILE" env')
-
-with open(conf_filename, 'r') as f:
-    conf: Dict[str, object] = yaml.safe_load(f)
-
-manifest = conf[MANIFEST_TOKEN]
-
-minio_creds = MinioCreds(**conf['minio'])
-
-engine_settings = conf['engine_settings']
-cache_validation_interval: float = conf['cache_validation_interval']
-
+settings = get_settings()
 
 template_db = TemplateDB(
-    manifest,
-    engine_settings,
-    TIME_DELTA,
-    minio_creds,
+    settings.manifest,
+    settings.engine_settings,
+    settings.push_result_validity_time,
+    settings.minio,
     node_transformer=PHOENIX_NODE_TRANSFORMER,
-    cache_validation_interval=cache_validation_interval
+    cache_validation_interval=settings.cache_validation_interval
 )
-

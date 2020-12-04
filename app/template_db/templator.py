@@ -5,7 +5,7 @@ import shutil
 import time
 import traceback
 import uuid
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, List, Tuple, Type
 import datetime
 import Fancy_term as term
 import minio
@@ -54,7 +54,7 @@ class Templator:
         self.time_delta = time_delta
         self.replacer = replacer
         self.engine_settings = engine_settings
-        self.verbose = True
+        self.verbose: bool = True
         self.available_engines: Dict[str, TemplateEngine] = available_engines
         self.logger = logger
 
@@ -63,13 +63,16 @@ class Templator:
         """
         try:
             name, ext = from_filename(filename)
-            pull_infos = PullInformations(MinioPath(
-                self.remote_template_bucket, filename), self.minio_instance)
+            pull_infos = PullInformations(
+                MinioPath(self.remote_template_bucket, filename),
+                self.minio_instance
+            )
             if ext in self.available_engines:
-                engine: TemplateEngine = self.available_engines[ext]
+                engine = self.available_engines[ext]
                 template = engine(
                     filename,
-                    pull_infos, self.replacer, self.engine_settings[ext]
+                    pull_infos,
+                    self.replacer,
                 )
                 self.templates[name] = template
                 template.init()

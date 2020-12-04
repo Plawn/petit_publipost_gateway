@@ -7,7 +7,6 @@ it must be a yaml and include
 import traceback
 from typing import Any, Dict, List, Optional, Union
 
-import yaml
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -31,7 +30,7 @@ app = FastAPI(
 )
 
 
-def make_error(msg: str, code=500):
+def make_error(msg: str, code: int = 500):
     return HTTPException(code, {'error': msg})
 
 

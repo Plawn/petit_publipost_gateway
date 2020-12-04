@@ -1,6 +1,6 @@
 import logging
 import threading
-from typing import *
+from typing import Optional, Dict
 
 
 def check_live_func() -> bool:

@@ -2,20 +2,20 @@
 """
 import minio
 from minio import Minio
+from pydantic.main import BaseModel
 
 
-class MinioCreds:
-    def __init__(self, host: str, accessKey: str, passKey: str, secure: bool):
-        self.key = accessKey
-        self.password = passKey
-        self.host = host
-        self.secure = secure
+class MinioCreds(BaseModel):
+    accessKey: str
+    passKey: str
+    host: str
+    secure: bool
 
     def as_client(self) -> Minio:
         return minio.Minio(
             self.host,
-            access_key=self.key,
-            secret_key=self.password,
+            access_key=self.accessKey,
+            secret_key=self.passKey,
             secure=self.secure
         )
 

@@ -39,11 +39,11 @@ class TemplateEngine(ABC):
     __conf: Optional[ConfigOptions] = None
     __auto_checker: Optional[AutoConfigurer] = None
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
 
         self.model: Optional[Model] = None
         self.pull_infos: PullInformations = pull_infos
-        self.replacer = replacer
+        self.replacer: MultiReplacer = replacer
         self.pulled_at: int = NEVER_PULLED
         self.filename: str = filename
 
@@ -106,8 +106,8 @@ class TemplateEngine(ABC):
         creds: MinioCreds = cls.__conf.minio
         data = {
             'host': creds.host,
-            'access_key': creds.key,
-            'pass_key': creds.password,
+            'access_key': creds.accessKey,
+            'pass_key': creds.passKey,
             'secure': creds.secure,
         }
         try:
@@ -190,9 +190,10 @@ class TemplateEngine(ABC):
                             'bucket_name': self.pull_infos.remote.bucket,
                             'template_name': self.pull_infos.remote.filename,
                             'exposed_as': self.exposed_as
-                        }]).json()
-                    successes = res['success']
-                    if len(res['success']) < 1:
+                        }])
+                    result = res.json()
+                    successes = result['success']
+                    if len(result['success']) < 1:
                         raise Exception(f'Failed to import {self.filename}')
                     fields = successes[0]['fields']
                     self._load_fields(fields)

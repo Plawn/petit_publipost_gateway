@@ -1,10 +1,12 @@
 from __future__ import annotations
-from .base_template_engine import TemplateEngine, NEVER_PULLED
-from .connectors import DocxTemplator, XlsxTemplator, PptxTemplator
-from .ReplacerMiddleware import MultiReplacer, BaseReplacer
+
 from typing import Dict
-from .model_handler import from_strings_to_dict
+
+from .base_template_engine import NEVER_PULLED, TemplateEngine
+from .connectors import DocxTemplator, PptxTemplator, XlsxTemplator
 from .constants import PREV_TOKEN
+from .model_handler import from_strings_to_dict
+from .ReplacerMiddleware import BaseReplacer, MultiReplacer
 
 DOCX = 'docx'
 XLSX = 'xlsx'

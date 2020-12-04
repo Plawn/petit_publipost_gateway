@@ -28,11 +28,9 @@ class PptxTemplator(TemplateEngine):
         'secure',
     )
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer, settings: dict):
-        super().__init__(filename, pull_infos, replacer, settings)
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
+        super().__init__(filename, pull_infos, replacer)
         PptxTemplator.registered_templates.append(self)
-
-        self.settings = Settings(settings['host'], settings['secure'])
 
     def _load_fields(self, fields: List[str] = None) -> None:
         if fields is None:
