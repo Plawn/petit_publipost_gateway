@@ -28,9 +28,9 @@ class DocxTemplator(TemplateEngine):
     """
     requires_env = []
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer):
         DocxTemplator.registered_templates.append(self)
-        super().__init__(filename, pull_infos, replacer)
+        super().__init__(pull_infos, replacer)
 
     def _load_fields(self, fields: Optional[List[str]] = None) -> None:
         if fields is None:

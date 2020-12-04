@@ -43,13 +43,12 @@ class TemplateEngine(ABC):
     __conf: Optional[ConfigOptions] = None
     __auto_checker: Optional[AutoConfigurer] = None
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
+    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer):
 
         self.model: Optional[Model] = None
         self.pull_infos: PullInformations = pull_infos
         self.replacer: MultiReplacer = replacer
         self.pulled_at: int = NEVER_PULLED
-        self.filename: str = filename
 
         """To ensure that we don't have name collision when using it with multiple buckets
         """
@@ -137,6 +136,9 @@ class TemplateEngine(ABC):
         data = {
             'data': data,
             'template_name': self.exposed_as,
+            # adding bucket for later use, make it more stateless
+            'bucket':self.pull_infos.remote.bucket,
+            # should send the hash of the current template version
             'output_bucket': path.bucket,
             'output_name': path.filename,
             'options': options.compile_options,
@@ -157,8 +159,11 @@ class TemplateEngine(ABC):
             return self.model.fields
         return None
 
+    # TODO: udpate
     @classmethod
     def remove_template(cls, template_name: str) -> None:
+        """Removes a template from a given `MinioPath`
+        """
         res = requests.delete(
             cls.url + '/remove_template',
             json={'template_name': template_name}

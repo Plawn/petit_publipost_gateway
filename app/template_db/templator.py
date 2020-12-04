@@ -19,6 +19,7 @@ ENSURE_KEYS = 'ensure_keys'
 
 CompileOptions = Literal['ensure_keys']
 
+
 def from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
     return '.'.join(name), ext
@@ -67,11 +68,7 @@ class Templator:
             )
             if ext in self.available_engines:
                 engine = self.available_engines[ext]
-                template = engine(
-                    filename,
-                    pull_infos,
-                    self.replacer,
-                )
+                template = engine(pull_infos, self.replacer)
                 self.templates[name] = template
                 template.init()
                 if self.verbose:

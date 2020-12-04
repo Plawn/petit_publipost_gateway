@@ -125,7 +125,7 @@ class AutoConfigurer:
 
     def run(self):
         while not self.stopped:
-            self.event.wait(base_check_up_time)
+            self.event.wait(self.check_up_time)
             self.event.clear()
             try:
                 if not self.check_live() or self.full_reload_scheduled:
