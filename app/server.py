@@ -4,6 +4,7 @@ it must be a yaml and include
 
 """
 
+from app.template_db import templator
 import traceback
 from typing import Any, Dict, List, Optional, Union
 
@@ -30,24 +31,34 @@ app = FastAPI(
 
 
 def make_error(msg: str, code: int = 500):
+    """Formats error as JSON message
+    """
     return HTTPException(code, {'error': msg})
 
 
 @app.get('/document')
 def get_all():
+    """Returns the full content of the templateDB, 
+    all templators and their given templates
+    """
     return template_db.to_json()
 
 
 @app.get('/document/{templator_name}')
 def get_all_documents_from_type(templator_name: str):
-    if templator_name in template_db.templators:
-        return template_db.templators[templator_name].to_json()
+    """Returns all the template from a given templator
+    """
+    templator = template_db.get_templator(templator_name)
+    if templator is not None:
+        return templator.to_json()
     else:
         return make_error('Type not found', 404)
 
 
 @app.get('/document/{templator_name}/{name}')
 def get_fields_document(templator_name: str, name: str):
+    """Returns all the fields for a given template in a templator
+    """
     templator = template_db.get_templator(templator_name)
     if templator is not None:
         # check if template name exists
@@ -141,6 +152,8 @@ def is_db_loaded():
 
 @app.get("/status")
 def status():
+    """Returns the status of the pool of engines
+    """
     return {
         engine_name: (engine_name in template_db.engines and engine.is_up())
         for engine_name, engine in template_engine.template_engines.items()
@@ -149,6 +162,8 @@ def status():
 
 @app.get('/status/{engine_name}')
 def engine_status(engine_name: str):
+    """Returns the status of a given engine
+    """
     if engine_name in template_db.engines:
         if template_db.engines[engine_name].is_up():
             return 'OK', 200
