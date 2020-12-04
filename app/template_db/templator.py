@@ -5,7 +5,7 @@ import shutil
 import time
 import traceback
 import uuid
-from typing import Dict, List, Tuple
+from typing import Any, Dict, Generator, List, Tuple
 import datetime
 import Fancy_term as term
 import minio
@@ -28,16 +28,23 @@ class Templator:
     """
     Holds the logic to :
 
-        - 'load from minio'
-        - 'text replacement'
-        - 'render'
-        - 'push to minio'
+        - load from minio
+        - text replacement
+        - render
+        - push to minio
     """
 
-    def __init__(self, minio_instance: minio.Minio, minio_path: MinioPath,
-                 output_path: MinioPath, time_delta: datetime.timedelta,
-                 replacer: MultiReplacer, engine_settings: dict,
-                 available_engines: Dict[str, TemplateEngine], logger: logging.Logger):
+    def __init__(
+        self,
+        minio_instance: minio.Minio,
+        minio_path: MinioPath,
+        output_path: MinioPath,
+        time_delta: datetime.timedelta,
+        replacer: MultiReplacer,
+        engine_settings: dict,
+        available_engines: Dict[str, TemplateEngine],
+        logger: logging.Logger
+    ):
         self.remote_template_bucket = minio_path.bucket
         self.local_template_directory = os.path.join(
             'temp', self.remote_template_bucket)
@@ -56,14 +63,14 @@ class Templator:
         """
         try:
             name, ext = from_filename(filename)
-            # there is no need for local_filename now that all the engines are remote
-            local_filename = os.path.join(
-                self.local_template_directory, filename)
-            pull_infos = PullInformations(local_filename, MinioPath(
+            pull_infos = PullInformations(MinioPath(
                 self.remote_template_bucket, filename), self.minio_instance)
             if ext in self.available_engines:
-                template = self.available_engines[ext](filename,
-                                                       pull_infos, self.replacer, self.engine_settings[ext])
+                engine: TemplateEngine = self.available_engines[ext]
+                template = engine(
+                    filename,
+                    pull_infos, self.replacer, self.engine_settings[ext]
+                )
                 self.templates[name] = template
                 template.init()
                 if self.verbose:
@@ -75,8 +82,9 @@ class Templator:
         except Exception as err:
             # import traceback; traceback.print_exc();
             self.logger.error(
-                f'\t- Error importing "{name}" from {self.remote_template_bucket}\t| {err}')
-            raise
+                f'\t- Error importing "{filename}" from {self.remote_template_bucket}\t| {err}'
+            )
+            raise err
 
     def pull_templates(self) -> Tuple[List[str], List[str]]:
         """Downloading and caching all templates from Minio
@@ -84,9 +92,11 @@ class Templator:
         self.logger.info(
             f'Initialising templates from bucket "{self.remote_template_bucket}"')
 
-        filenames = (obj.object_name for obj in self.minio_instance.list_objects(
-            self.remote_template_bucket))
-        successes, fails = [], []
+        filenames: Generator[str, None, None] = (
+            obj.object_name for obj in self.minio_instance.list_objects(self.remote_template_bucket)
+        )
+        successes: List[str] = []
+        fails: List[str] = []
         for filename in filenames:
             try:
                 self.pull_template(filename)
@@ -98,31 +108,42 @@ class Templator:
             f'Initialisation finished for bucket "{self.remote_template_bucket}"')
         return successes, fails
 
-    def to_json(self):
+    def to_json(self) -> Dict[str, List[str]]:
         return {
             name: template.get_fields() for name, template in self.templates.items()
         }
 
-    def render(self, template_name: str, data: Dict[str, str], output_name: str, options: RenderOptions) -> str:
+    def __get_engine_instance(self, template_name: str) -> TemplateEngine:
+        return self.templates[template_name]
+
+    def render(self, template_name: str, data: Dict[str, Any], output_name: str, options: RenderOptions) -> str:
         output_name = os.path.join(self.output_path.filename, output_name)
 
-        engine = self.templates[template_name]
-        if not engine.is_up():
-            engine.reconfigure()
+        template = self.__get_engine_instance(template_name)
+        if not template.is_up():
+            template.reconfigure()
         # to know if we want to ensure_keys or have an error
         should_ensure_keys = ENSURE_KEYS in options.compile_options
 
-        data = change_keys(engine.model.merge(
-            data, should_ensure_keys), engine.replacer.to_doc)
+        rendered_data = change_keys(
+            template.model.merge(data, should_ensure_keys),
+            template.replacer.to_doc
+        )
 
-        result = engine.render_to(
-            data, MinioPath(self.output_path.bucket, output_name), options)
+        result = template.render_to(
+            rendered_data,
+            MinioPath(self.output_path.bucket, output_name),
+            options
+        )
 
+        # if push_result == True, then the engine,
+        # will push the result directly to the S3
         if options.push_result:
             return self.minio_instance.presigned_get_object(
                 self.output_path.bucket,
                 output_name,
-                expires=self.time_delta)
+                expires=self.time_delta
+            )
         else:
             return result
 

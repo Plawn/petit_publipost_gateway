@@ -1,6 +1,12 @@
+# http
 fastapi[all]
 uvicorn
+
+# S3
 minio
+
+# conf
 pyyaml
+
+# template_db
 requests
-Fancy_term

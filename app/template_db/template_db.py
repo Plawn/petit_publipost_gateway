@@ -2,7 +2,7 @@ import logging
 import threading
 import traceback
 from datetime import timedelta
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import minio
 
@@ -15,12 +15,10 @@ from .templator import Templator
 
 OUTPUT_DIRECTORY_TOKEN = 'output_bucket'
 
-# placeholder for now
-
 
 def check_minio_instance(minio_instance: minio.Minio) -> bool:
     try:
-        res = minio_instance.list_buckets()
+        _ = minio_instance.list_buckets()
         return True
     except:
         return False
@@ -56,14 +54,13 @@ class TemplateDB:
         self.loading: bool = True
         self.cache_handler: Optional[threading.Thread] = None
         self.lock = threading.RLock()
-        # default for now
-        # TODO: set it as a setting
+
         self.cache_validation_interval: float = cache_validation_interval
 
-        self.__first_loaded: bool = False
+        self.__initialized: bool = False
 
-    def init(self):
-        if self.__first_loaded:
+    def init(self) -> None:
+        if self.__initialized:
             raise Exception('Already initialized')
         self.loading = True
         self.__init_engines()
@@ -73,23 +70,27 @@ class TemplateDB:
             self.__start_cache_handler()
         self.loading = False
 
-        self.__first_loaded = True
+        self.__initialized = True
 
-    def __init_engines(self):
+    def __init_engines(self) -> None:
         self.engines = self.__init_template_servers()
         self.__init_templators()
 
-    def load_templates(self):
+    def load_templates(self) -> None:
         # to be thread-safe
         with self.lock:
             for templator in self.templators.values():
                 templator.pull_templates()
 
-    def render_template(self, _type: str, name: str, data: Dict[str, str],  output: str, options: RenderOptions):
-        return self.templators[_type].render(name, data, output, options)
+    def render_template(self, templator_name: str, template_name: str, data: Dict[str, Any],  output_name: str, options: RenderOptions):
+        return self.templators[templator_name].render(template_name, data, output_name, options)
+
+    def add_connector(self):
+        raise NotImplementedError
 
     def __init_template_servers(self) -> None:
         available_engines: Dict[str, TemplateEngine] = {}
+        # reverse the way it's done
         for name, engine in template_engines.items():
             if name not in self.engine_settings:
                 self.logger.warning(f'No configuration for engine {name}')
@@ -101,9 +102,9 @@ class TemplateDB:
                 try:
                     engine.register(settings, name, self.logger)
                     self.logger.info(
-                        f'Successfuly registered "{name}" handler')
+                        f'Successfuly registered "{name}" engine'
+                    )
                 except Exception as e:
-                    import traceback
                     traceback.print_exc()
                     self.logger.error(e)
             else:
@@ -126,6 +127,8 @@ class TemplateDB:
                     self.logger
                 )
             except Exception as e:
+                self.logger.error(
+                    f'Failed to initialize {bucket_name} templator')
                 traceback.print_exc()
 
     def to_json(self):
@@ -151,6 +154,7 @@ class TemplateDB:
             while True:
                 self.__handle_cache()
                 e.wait(time_between_checks)
+        # daemon = True, to make the thread die at the end
         t = threading.Thread(target=f, daemon=True)
         t.start()
         self.cache_handler = t

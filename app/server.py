@@ -5,7 +5,6 @@ it must be a yaml and include
 """
 
 import traceback
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
@@ -17,8 +16,13 @@ from .template_db import (ENSURE_KEYS, MinioCreds, MinioPath, RenderOptions,
                           TemplateDB, from_strings_to_dict, template_engine)
 from .template_db.template_engine.base_template_engine import EngineDown
 
-default_options = RenderOptions(push_result=True, compile_options=[
-                                ENSURE_KEYS], transform_data=True)
+default_options = RenderOptions(
+    push_result=True,
+    compile_options=[
+        ENSURE_KEYS
+    ],
+    transform_data=True
+)
 
 app = FastAPI(
     on_startup=[
@@ -36,7 +40,7 @@ def get_all():
     return template_db.to_json()
 
 
-@app.get('/document/<_type>')
+@app.get('/document/{_type}')
 def get_all_documents_from_type(_type: str):
     if _type in template_db.templators:
         return template_db.templators[_type].to_json()
@@ -44,7 +48,7 @@ def get_all_documents_from_type(_type: str):
         return make_error('Type not found', 404)
 
 
-@app.get('/document/<_type>/<name>')
+@app.get('/document/{_type}/{name}')
 def get_fields_document(_type: str, name: str):
     # check if type exists
     if _type in template_db.templators:
@@ -57,7 +61,7 @@ def get_fields_document(_type: str, name: str):
 
 
 # das working
-@app.get('/reload/<templator_name>/<name>')
+@app.get('/reload/{templator_name}/{name}')
 def reload_document(templator_name: str, name: str):
     try:
         if name == 'all':
@@ -134,7 +138,7 @@ def engine_status(engine_name: str):
     if engine_name in template_db.engines:
         if template_db.engines[engine_name].is_up():
             return 'OK', 200
-        
+
         else:
             return 'KO', 402
     else:

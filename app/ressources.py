@@ -1,6 +1,4 @@
 import os
-import shutil
-import threading
 from datetime import timedelta
 from typing import Dict
 
@@ -8,7 +6,6 @@ import yaml
 
 from .template_db import MinioCreds, TemplateDB
 from .transformers import PHOENIX_NODE_TRANSFORMER
-from .template_db.utils import conf_loader
 
 # should be env or config variable
 TIME_DELTA = timedelta(days=1)
