@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from .base_template_engine import NEVER_PULLED, TemplateEngine
+from .base_template_engine import NEVER_PULLED, TemplateEngine, EngineDown
 from .connectors import DocxTemplator, PptxTemplator, XlsxTemplator
 from .constants import PREV_TOKEN
 from .model_handler import from_strings_to_dict

@@ -3,13 +3,12 @@ import threading
 import traceback
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Set
-
+from dataclasses import dataclass
 import minio
 
-from .data_objects import ConfigOptions, ManifestEntry, RenderOptions
+from .data_objects import ManifestEntry, RenderOptions
 from .minio_creds import MinioCreds, MinioPath
 from .template_engine import TemplateEngine, template_engines
-from .template_engine.model_handler.utils import from_strings_to_dict
 from .template_engine.ReplacerMiddleware import MultiReplacer
 from .templator import Templator
 
@@ -20,6 +19,11 @@ def check_minio_instance(minio_instance: minio.Minio) -> bool:
         return True
     except:
         return False
+
+@dataclass
+class ConfigOptions:
+    env: dict
+    minio: MinioCreds
 
 
 class TemplateDB:
@@ -39,16 +43,16 @@ class TemplateDB:
         self.minio_creds: MinioCreds = minio_creds
         self.minio_instance = self.minio_creds.as_client()
         self.logger = logger or logging.getLogger(
-            f'TemplateDB_logger{id(self)}')
-        # doing this to check if the minio instance is correct
-        if not check_minio_instance(self.minio_instance):
-            raise Exception('Invalid minio creds')
+            f'TemplateDB_logger{id(self)}'
+        )
         self.manifest: Dict[str, ManifestEntry] = manifest
         self.replacer: MultiReplacer = node_transformer or MultiReplacer([])
         self.templators: Dict[str, Templator] = {}
-        self.time_delta = time_delta
-        self.engine_settings = engine_settings
-        self.engines: Dict[str, TemplateEngine] = None
+        self.time_delta: timedelta = time_delta
+        """Engine Name -> settings
+        """
+        self.engine_settings: Dict[str, Any] = engine_settings
+        self.engines: Dict[str, TemplateEngine] = {}
         self.loading: bool = True
         self.cache_handler: Optional[threading.Thread] = None
         self.lock = threading.RLock()
@@ -58,6 +62,9 @@ class TemplateDB:
         self.__initialized: bool = False
 
     def init(self) -> None:
+        # doing this to check if the minio instance is correct
+        if not check_minio_instance(self.minio_instance):
+            raise Exception('Invalid S3 credentials')
         if self.__initialized:
             raise Exception('Already initialized')
         self.loading = True
@@ -82,6 +89,13 @@ class TemplateDB:
 
     def render_template(self, templator_name: str, template_name: str, data: Dict[str, Any],  output_name: str, options: RenderOptions):
         return self.templators[templator_name].render(template_name, data, output_name, options)
+
+    def get_templator(self, templator_name: str) -> Optional[Templator]:
+        """Returns the given templator from the templator pool
+
+        use this if you want to manually reload one templator
+        """
+        return self.templators.get(templator_name)
 
     def add_connector(self):
         raise NotImplementedError

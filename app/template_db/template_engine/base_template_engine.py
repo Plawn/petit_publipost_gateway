@@ -7,15 +7,19 @@ import logging
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
 import requests
 
 from ..minio_creds import MinioCreds, MinioPath, PullInformations
-from ..template_db import ConfigOptions, RenderOptions
 from .auto_configurer import AutoConfigurer, FailedToConfigure
 from .model_handler import Model, SyntaxtKit
 from .ReplacerMiddleware import MultiReplacer
+
+if TYPE_CHECKING:
+    from ..data_objects import RenderOptions
+    from ..template_db import ConfigOptions
+    from ..templator import CompileOptions
 
 
 def make_url(settings: dict) -> str:

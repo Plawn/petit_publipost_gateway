@@ -11,9 +11,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from .ressources import template_db
-from .template_db import (ENSURE_KEYS, MinioCreds, MinioPath, RenderOptions,
-                          TemplateDB, from_strings_to_dict, template_engine)
-from .template_db.template_engine.base_template_engine import EngineDown
+from .template_db import ENSURE_KEYS, RenderOptions, from_strings_to_dict, template_engine, EngineDown
+
 
 default_options = RenderOptions(
     push_result=True,
@@ -39,64 +38,78 @@ def get_all():
     return template_db.to_json()
 
 
-@app.get('/document/{_type}')
-def get_all_documents_from_type(_type: str):
-    if _type in template_db.templators:
-        return template_db.templators[_type].to_json()
+@app.get('/document/{templator_name}')
+def get_all_documents_from_type(templator_name: str):
+    if templator_name in template_db.templators:
+        return template_db.templators[templator_name].to_json()
     else:
         return make_error('Type not found', 404)
 
 
-@app.get('/document/{_type}/{name}')
-def get_fields_document(_type: str, name: str):
-    # check if type exists
-    if _type in template_db.templators:
+@app.get('/document/{templator_name}/{name}')
+def get_fields_document(templator_name: str, name: str):
+    templator = template_db.get_templator(templator_name)
+    if templator is not None:
         # check if template name exists
-        if name in template_db.templators[_type].templates:
-            return template_db.templators[_type].templates[name].get_fields()
+        if name in templator.templates:
+            return templator.templates[name].get_fields()
         return make_error('Template not found', 404)
     else:
-        return make_error('Type not found', 404)
+        return make_error('Templator not found', 404)
 
 
-# das working
-@app.get('/reload/{templator_name}/{name}')
-def reload_document(templator_name: str, name: str):
+@app.get('/reload/{templator_name}/{template_name}')
+def reload_document(templator_name: str, template_name: str):
+    """Will reload the specied templator in the case name `template_name` == 'all'
+
+    else will reload the template_name from a given templator
+    """
     try:
-        if name == 'all':
-            successes, fails = template_db.templators[templator_name].pull_templates(
-            )
-            return {'error': False}
+        templator = template_db.get_templator(templator_name)
+        if templator_name is not None:
+            if template_name == 'all':
+                templator.pull_templates()
+                return {'error': False}
+            else:
+                # should be full name
+                # ex: DDE.docx
+                return templator.pull_template(template_name)
         else:
-            # should be full name
-            # ex: DDE.docx
-            return template_db.templators[templator_name].pull_template(name)
-    except KeyError as e:
-        return make_error(f'Template not found {e.__str__()}', 400)
+            return make_error(f'Template not found {templator_name}', 404)
     except:
         return make_error(traceback.format_exc(), 500)
 
 
-@app.route('/reload', methods=['GET'])
+@app.get('/reload')
 def reload_all_documents():
+    """Will attempt to reload the complete db
+    """
     try:
         template_db.load_templates()
         return {'error': False}
     except:
         return make_error(traceback.format_exc(), 500)
 
+# TODO:
+# update in phoenix-api the name of the fields for a better comprehension
+
 
 class PubliPostBody(BaseModel):
-    type: str
-    document_name: str
-    filename: str
+    # templator name
+    templator_name: str
+    # template_name
+    template_name: str
+
+    """output_filename in case of option.push_result = False"""
+    output_filename: str
+    """render options that will be passed to the template_db and engines"""
     options: Optional[RenderOptions]
-    data: dict
+    """the actual data to replace in the templates"""
+    data: Dict[str, Any]
 
 
 @app.post('/publipost')
 def publipost_document(body: PubliPostBody):
-
     options = body.options or default_options
     data = body.data
     if options.transform_data:
@@ -105,7 +118,7 @@ def publipost_document(body: PubliPostBody):
     # for email rendering we will use the push_result option
     try:
         return {
-            'result': template_db.render_template(body.type, body.document_name, data, body.filename, options)
+            'result': template_db.render_template(body.templator_name, body.template_name, data, body.output_filename, options)
         }
     except EngineDown:
         return make_error('Engine down')
@@ -121,7 +134,9 @@ def live():
 
 @app.get('/is_db_loaded')
 def is_db_loaded():
-    return {'loaded': template_db.loading}
+    return {
+        'loaded': template_db.loading
+    }
 
 
 @app.get("/status")
@@ -137,7 +152,6 @@ def engine_status(engine_name: str):
     if engine_name in template_db.engines:
         if template_db.engines[engine_name].is_up():
             return 'OK', 200
-
         else:
             return 'KO', 402
     else:

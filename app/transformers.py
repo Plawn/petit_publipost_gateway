@@ -85,7 +85,9 @@ class ListReplacer(BaseReplacer):
         return text
 
 
-PHOENIX_NODE_TRANSFORMER = MultiReplacer([FuncReplacer()])
+PHOENIX_NODE_TRANSFORMER = MultiReplacer([
+    FuncReplacer()
+])
 
 
 if __name__ == '__main__':

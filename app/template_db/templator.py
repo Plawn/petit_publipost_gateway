@@ -1,23 +1,23 @@
-import traceback
+from __future__ import annotations
+
+import datetime
 import logging
 import os
-import shutil
-import time
-import traceback
-import uuid
-from typing import Any, Dict, Generator, List, Tuple, Type
-import datetime
-import Fancy_term as term
+from typing import (TYPE_CHECKING, Any, Dict, Generator, List, Literal, Tuple)
+
 import minio
 
 from .minio_creds import MinioPath, PullInformations
-from .template_db import RenderOptions
 from .template_engine import NEVER_PULLED, TemplateEngine, template_engines
 from .template_engine.model_handler.utils import change_keys
 from .template_engine.ReplacerMiddleware import MultiReplacer
 
+if TYPE_CHECKING:
+    from .data_objects import RenderOptions
+
 ENSURE_KEYS = 'ensure_keys'
 
+CompileOptions = Literal['ensure_keys']
 
 def from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
@@ -46,8 +46,6 @@ class Templator:
         logger: logging.Logger
     ):
         self.remote_template_bucket = minio_path.bucket
-        self.local_template_directory = os.path.join(
-            'temp', self.remote_template_bucket)
         self.output_path = output_path
         self.templates: Dict[str, TemplateEngine] = {}
         self.minio_instance = minio_instance

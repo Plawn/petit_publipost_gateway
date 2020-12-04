@@ -5,7 +5,6 @@ from typing import *
 import requests
 
 from ....minio_creds import MinioCreds, MinioPath, PullInformations
-from ....template_db import ConfigOptions, RenderOptions
 from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
 from ...ReplacerMiddleware import MultiReplacer

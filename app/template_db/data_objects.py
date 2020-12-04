@@ -1,18 +1,15 @@
 from dataclasses import dataclass
 from typing import List
-from .minio_creds import MinioCreds
 
-@dataclass
-class ConfigOptions:
-    env: dict
-    minio: MinioCreds
+from .templator import CompileOptions
 
 
 @dataclass
 class RenderOptions:
     push_result: bool
     transform_data: bool
-    compile_options: List[str]
+    compile_options: List[CompileOptions]
+
 
 @dataclass
 class ManifestEntry:
