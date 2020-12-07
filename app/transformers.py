@@ -1,8 +1,8 @@
+import re
 from dataclasses import dataclass
 from typing import Tuple
-from .template_db import BaseReplacer, MultiReplacer, PREV_TOKEN
 
-import re
+from .template_db import PREV_TOKEN, BaseReplacer, MultiReplacer
 
 TYPE_SYMBOL = 'type'
 

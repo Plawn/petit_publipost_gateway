@@ -3,7 +3,8 @@ from __future__ import annotations
 import datetime
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Dict, Generator, List, Literal, Tuple)
+from typing import (TYPE_CHECKING, Any, Dict, Generator,
+                    List, Literal, Tuple, Type)
 
 import minio
 
@@ -54,7 +55,8 @@ class Templator:
         self.replacer = replacer
         self.engine_settings = engine_settings
         self.verbose: bool = True
-        self.available_engines: Dict[str, TemplateEngine] = available_engines
+        self.available_engines: Dict[str,
+                                     Type[TemplateEngine]] = available_engines
         self.logger = logger
 
     def pull_template(self, filename: str) -> List[str]:
@@ -68,7 +70,7 @@ class Templator:
             )
             if ext in self.available_engines:
                 engine = self.available_engines[ext]
-                template = engine(pull_infos, self.replacer)
+                template = engine(filename, pull_infos, self.replacer)
                 self.templates[name] = template
                 template.init()
                 if self.verbose:
@@ -88,7 +90,8 @@ class Templator:
         """Downloading and caching all templates from Minio
         """
         self.logger.info(
-            f'Initialising templates from bucket "{self.remote_template_bucket}"')
+            f'Initialising templates from bucket "{self.remote_template_bucket}"'
+        )
 
         filenames: Generator[str, None, None] = (
             obj.object_name for obj in self.minio_instance.list_objects(self.remote_template_bucket)

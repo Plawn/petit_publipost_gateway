@@ -2,7 +2,7 @@ import logging
 import threading
 import traceback
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Type
 from dataclasses import dataclass
 import minio
 
@@ -19,6 +19,7 @@ def check_minio_instance(minio_instance: minio.Minio) -> bool:
         return True
     except:
         return False
+
 
 @dataclass
 class ConfigOptions:
@@ -61,6 +62,8 @@ class TemplateDB:
 
         self.__initialized: bool = False
 
+        self.available_connectors: Dict[str, Type[TemplateEngine]] = {}
+
     def init(self) -> None:
         # doing this to check if the minio instance is correct
         if not check_minio_instance(self.minio_instance):
@@ -87,6 +90,12 @@ class TemplateDB:
             for templator in self.templators.values():
                 templator.pull_templates()
 
+    def use_default_connectors(self):
+        """Will bind the integrated docx, pptx and xlsx connector to this instance
+        """
+        for engine in template_engines.values():
+            self.add_connector(engine)
+
     def render_template(self, templator_name: str, template_name: str, data: Dict[str, Any],  output_name: str, options: RenderOptions):
         return self.templators[templator_name].render(template_name, data, output_name, options)
 
@@ -97,32 +106,35 @@ class TemplateDB:
         """
         return self.templators.get(templator_name)
 
-    def add_connector(self):
-        raise NotImplementedError
+    def add_connector(self, connector: Type[TemplateEngine]):
+        for ext in connector.supported_extensions:
+            self.available_connectors[ext] = connector
 
     def __init_template_servers(self) -> None:
+        if len(self.available_connectors) == 0:
+            raise Exception('No connectors bound')
         available_engines: Dict[str, TemplateEngine] = {}
         # reverse the way it's done
-        for name, engine in template_engines.items():
-            if name not in self.engine_settings:
-                self.logger.warning(f'No configuration for engine {name}')
+        for ext, env in self.engine_settings.items():
+            if ext not in self.available_connectors:
+                self.logger.warning(f'No configuration for engine {ext}')
                 continue
-            env = self.engine_settings[name]
+            engine = self.available_connectors[ext]
             ok, missing = engine.check_env(env)
-            settings = ConfigOptions(env, self.minio_creds)
             if ok:
                 try:
-                    engine.register(settings, name, self.logger)
+                    settings = ConfigOptions(env, self.minio_creds)
+                    engine.register(settings, self.logger)
                     self.logger.info(
-                        f'Successfuly registered "{name}" engine'
+                        f'Successfuly registered "{ext}" engine'
                     )
                 except Exception as e:
                     traceback.print_exc()
                     self.logger.error(e)
             else:
                 self.logger.error(
-                    f'Invalid env for handler "{name}" | missing keys {missing}')
-            available_engines[name] = engine
+                    f'Invalid env for handler "{ext}" | missing keys {missing}')
+            available_engines[ext] = engine
         return available_engines
 
     def __init_templators(self):
@@ -153,6 +165,7 @@ class TemplateDB:
             try:
                 templator.handle_cache()
             except:
+                import traceback; traceback.print_exc();
                 self.logger.error(f'Failed to handle cache for {templator}')
 
     def __start_cache_handler(self):

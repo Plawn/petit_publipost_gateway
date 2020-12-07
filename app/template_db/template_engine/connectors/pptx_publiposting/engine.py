@@ -27,8 +27,10 @@ class PptxTemplator(TemplateEngine):
         'secure',
     )
 
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer):
-        super().__init__(pull_infos, replacer)
+    supported_extensions = {'pptx'}
+
+    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiReplacer):
+        super().__init__(filename, pull_infos, replacer)
         PptxTemplator.registered_templates.append(self)
 
     def _load_fields(self, fields: List[str] = None) -> None:

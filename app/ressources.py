@@ -12,3 +12,5 @@ template_db = TemplateDB(
     node_transformer=PHOENIX_NODE_TRANSFORMER,
     cache_validation_interval=settings.cache_validation_interval
 )
+
+template_db.use_default_connectors()

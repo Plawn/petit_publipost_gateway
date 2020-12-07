@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Type
 
 from .base_template_engine import NEVER_PULLED, TemplateEngine, EngineDown
 from .connectors import DocxTemplator, PptxTemplator, XlsxTemplator
@@ -12,7 +12,7 @@ DOCX = 'docx'
 XLSX = 'xlsx'
 PPTX = 'pptx'
 
-template_engines: Dict[str, TemplateEngine] = {
+template_engines: Dict[str, Type[TemplateEngine]] = {
     DOCX: DocxTemplator,
     XLSX: XlsxTemplator,
     PPTX: PptxTemplator,

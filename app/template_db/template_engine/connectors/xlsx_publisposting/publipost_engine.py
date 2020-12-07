@@ -26,8 +26,10 @@ class XlsxTemplator(TemplateEngine):
         'secure',
     )
 
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer):
-        super().__init__(pull_infos, replacer)
+    supported_extensions = {'xlsx'}
+
+    def __init__(self,filename:str,  pull_infos: PullInformations, replacer: MultiReplacer):
+        super().__init__(filename, pull_infos, replacer)
         XlsxTemplator.registered_templates.append(self)
 
     def _load_fields(self, fields: Optional[List[str]] = None) -> None:

@@ -34,16 +34,16 @@ class EngineDown(Exception):
 
 class TemplateEngine(ABC):
     requires_env: Iterable[str] = []
-
     registered_templates: List[TemplateEngine] = []
+    supported_extensions: Set[str] = {}
+
     url = ''
-    ext = ''
     logger: Optional[logging.Logger] = None
     __conf: Optional[ConfigOptions] = None
     __auto_checker: Optional[AutoConfigurer] = None
 
-    def __init__(self, pull_infos: PullInformations, replacer: MultiReplacer):
-
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
+        self.filename: str = filename
         self.model: Optional[Model] = None
         self.pull_infos: PullInformations = pull_infos
         self.replacer: MultiReplacer = replacer
@@ -72,19 +72,21 @@ class TemplateEngine(ABC):
         return len(missing_keys) == 0, missing_keys
 
     @classmethod
-    def register(cls, env: ConfigOptions, ext: str, logger: logging.Logger) -> None:
-        cls.__conf = env
-        cls.ext = ext
-        cls.logger = logger
-        settings = cls.__conf.env
-        cls.url = make_url(settings)
-        cls.__auto_checker = AutoConfigurer(
-            cls.__name__,
-            check_live=cls._check_live,
-            configure=cls._configure,
-            logger=cls.logger,
-            post_configuration=cls._re_register_templates
-        )
+    def register(cls, env: ConfigOptions, logger: logging.Logger) -> None:
+        if cls.logger is None:
+            cls.__conf = env
+            cls.logger = logger
+            settings = cls.__conf.env
+            cls.url = make_url(settings)
+            cls.__auto_checker = AutoConfigurer(
+                cls.__name__,
+                check_live=cls._check_live,
+                configure=cls._configure,
+                logger=cls.logger,
+                post_configuration=cls._re_register_templates
+            )
+        else:
+            cls.logger.info(f'engine is already registered for {cls.__name__}')
 
     @classmethod
     def _check_live(cls):
