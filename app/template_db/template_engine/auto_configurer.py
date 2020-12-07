@@ -1,6 +1,6 @@
 import logging
 import threading
-from typing import Optional, Dict
+from typing import Final, Optional, Dict
 
 
 def check_live_func() -> bool:
@@ -15,7 +15,7 @@ def configure_func() -> None:
     ...
 
 
-base_check_up_time = 30
+base_check_up_time: Final[int] = 30
 
 
 class FailedToConfigure(Exception):
@@ -47,8 +47,8 @@ class AutoConfigurer:
     ):
         self.name = name
         self.event = threading.Event()
-        self.check_live: check_live_func = check_live
-        self.configure = configure
+        self.check_live: Final[check_live_func] = check_live
+        self.configure_engine: Final[configure_func] = configure
         self.check_up_time: float = check_up_time
         self.post_configuration = post_configuration
         self.up: bool = False
@@ -78,7 +78,7 @@ class AutoConfigurer:
     def __mount(self) -> None:
         try:
             self.configuring = True
-            self.configure()
+            self.configure_engine()
             self.up = True
         except:
             self.up = False
@@ -109,7 +109,7 @@ class AutoConfigurer:
                 self.logger.warning(
                     f'service is not configured -> trying to configure | {self.name}')
                 self.configuring = True
-                self.configure()
+                self.configure_engine()
                 self.up = True
                 self.logger.info(
                     f'service successfully configured | {self.name}')
@@ -131,16 +131,18 @@ class AutoConfigurer:
                 if not self.check_live() or self.full_reload_scheduled:
                     self.up = False
                     self.logger.warning(
-                        f'service is not configured -> trying to configure | {self.name}')
+                        f'service is not configured -> trying to configure | {self.name}'
+                    )
                     self.configuring = True
 
                     # to bind other actions cleanly
                     self.__run_pre_hooks()
 
-                    self.configure()
+                    self.configure_engine()
                     self.up = True
                     self.logger.info(
-                        f'service successfully configured | {self.name}')
+                        f'service successfully configured | {self.name}'
+                    )
                     if self.post_configuration:
                         self.post_configuration()
                         self.full_reload_scheduled = False

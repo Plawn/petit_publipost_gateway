@@ -19,7 +19,6 @@ from .ReplacerMiddleware import MultiReplacer
 if TYPE_CHECKING:
     from ..data_objects import RenderOptions
     from ..template_db import ConfigOptions
-    from ..templator import CompileOptions
 
 
 def make_url(settings: dict) -> str:
@@ -116,7 +115,7 @@ class TemplateEngine(ABC):
         try:
             res = requests.post(cls.url + '/configure', json=data)
             if res.status_code >= 300:
-                raise FailedToConfigure
+                raise FailedToConfigure(f'code: {res.status_code}')
         except:
             raise EngineDown(cls.__name__)
 
@@ -133,18 +132,19 @@ class TemplateEngine(ABC):
             self.reconfigure()
 
         # should make a dataclass here
-        data = {
+        js = {
             'data': data,
             'template_name': self.exposed_as,
+            'r_template_name': self.pull_infos.remote.filename,
             # adding bucket for later use, make it more stateless
-            'bucket':self.pull_infos.remote.bucket,
+            'bucket': self.pull_infos.remote.bucket,
             # should send the hash of the current template version
             'output_bucket': path.bucket,
             'output_name': path.filename,
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        res = requests.post(self.url + '/publipost', json=data)
+        res = requests.post(self.url + '/publipost', json=js)
         result = res.json()
         if 'error' in result:
             if result['error']:
@@ -154,7 +154,7 @@ class TemplateEngine(ABC):
     def to_json(self) -> dict:
         return self.model.structure
 
-    def get_fields(self) -> List[str]:
+    def get_fields(self) -> Optional[List[str]]:
         if self.model is not None and self.is_up():
             return self.model.fields
         return None
@@ -203,7 +203,8 @@ class TemplateEngine(ABC):
                     result = res.json()
                     successes = result['success']
                     if len(result['success']) < 1:
-                        raise Exception(f'Failed to import {self.filename}')
+                        raise Exception(f'Failed to import {self.exposed_as}')
+                    # we know there is only one to setup here
                     fields = successes[0]['fields']
                     self._load_fields(fields)
                     self.pulled_at = time.time()
@@ -214,4 +215,15 @@ class TemplateEngine(ABC):
         else:
             with self.__init_lock:
                 if not self.is_up():
-                    raise Exception(f'Failed to init {self.filename}')
+                    raise Exception(f'Failed to init {self.exposed_as}')
+
+    def _get_placeholders(self) -> List[str]:
+        res = requests.post(
+            self.url + '/get_placeholders',
+            json={'name': self.exposed_as}
+        )
+        result = res.json()
+        if res.status_code >= 400:
+            raise Exception(
+                f'failed to get placeholders for {self.exposed_as}')
+        return result

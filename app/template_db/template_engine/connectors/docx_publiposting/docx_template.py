@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-import requests
-
 from ....minio_creds import PullInformations
 from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
@@ -34,12 +32,7 @@ class DocxTemplator(TemplateEngine):
 
     def _load_fields(self, fields: Optional[List[str]] = None) -> None:
         if fields is None:
-            res = requests.post(
-                self.url + '/get_placeholders',
-                json={'name': self.exposed_as}
-            ).json()
-            fields: List[str] = res
-        
+            fields: List[str] = self._get_placeholders()
         cleaned = []
         for field in fields:
             field, additional_infos = self.replacer.from_doc(field)
