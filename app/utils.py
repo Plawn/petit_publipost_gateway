@@ -14,7 +14,7 @@ CONF_FILE_TOKEN = 'CONF_FILE'
 
 
 class Settings(BaseModel):
-    minio: MinioCreds
+    s3: MinioCreds
     cache_validation_interval: int
     manifest: Dict[str, ManifestEntry]
     engine_settings: Dict[str, Any]

@@ -4,10 +4,8 @@ it must be a yaml and include
 
 """
 
-from app.template_db import templator
 import traceback
-from typing import Any, Dict, List, Optional, Union
-
+from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 

@@ -1,8 +1,8 @@
 """Minio Stuff
 """
-import minio
+from dataclasses import dataclass
 from minio import Minio
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 
 class MinioCreds(BaseModel):
@@ -12,7 +12,7 @@ class MinioCreds(BaseModel):
     secure: bool
 
     def as_client(self) -> Minio:
-        return minio.Minio(
+        return Minio(
             self.host,
             access_key=self.accessKey,
             secret_key=self.passKey,
@@ -20,13 +20,13 @@ class MinioCreds(BaseModel):
         )
 
 
+@dataclass
 class MinioPath:
-    def __init__(self, bucket: str, filename: str = ''):
-        self.bucket = bucket
-        self.filename = filename
+    bucket: str
+    filename: str = ''
 
 
+@dataclass
 class PullInformations:
-    def __init__(self, remote: MinioPath, minio_instance: minio.Minio):
-        self.remote = remote
-        self.minio = minio_instance
+    remote: MinioPath
+    minio: Minio

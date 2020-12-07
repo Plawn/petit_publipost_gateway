@@ -96,7 +96,14 @@ class TemplateDB:
         for engine in template_engines.values():
             self.add_connector(engine)
 
-    def render_template(self, templator_name: str, template_name: str, data: Dict[str, Any],  output_name: str, options: RenderOptions):
+    def render_template(
+        self,
+        templator_name: str,
+        template_name: str,
+        data: Dict[str, Any],
+        output_name: str,
+        options: RenderOptions
+    ) -> str:
         return self.templators[templator_name].render(template_name, data, output_name, options)
 
     def get_templator(self, templator_name: str) -> Optional[Templator]:
@@ -164,9 +171,8 @@ class TemplateDB:
         for templator in self.templators.values():
             try:
                 templator.handle_cache()
-            except:
-                import traceback; traceback.print_exc();
-                self.logger.error(f'Failed to handle cache for {templator}')
+            except Exception as e:
+                self.logger.error(f'Failed to handle cache for {templator} | {e}')
 
     def __start_cache_handler(self):
         e = threading.Event()

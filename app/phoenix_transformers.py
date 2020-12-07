@@ -41,8 +41,8 @@ class FuncReplacer(BaseReplacer):
                 f'"{i}"' if i[0] != to_replace_context.other_side else i for i in params
             )
 
-            return (text[:i] + f'({to_replace_sep.other_side.join(params)})', {})
-        return (text, {})
+            return text[:i] + f'({to_replace_sep.other_side.join(params)})', {}
+        return text, {}
 
     @staticmethod
     def to_doc(text: str) -> str:
