@@ -1,4 +1,4 @@
-FROM python:3.7.2-slim
+FROM python:3.8.6-slim
 
 WORKDIR /api
 
@@ -10,5 +10,4 @@ COPY . .
 
 EXPOSE 5000
 
-# need to add a real wsgi server after
-ENTRYPOINT ["CONF_FILE=conf.yaml", "uvicorn", "app.server:app", "--port 5000"]
+ENTRYPOINT ["CONF_FILE=conf.yaml", "uvicorn", "app.server:app", "--port", "5000"]

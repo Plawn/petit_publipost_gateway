@@ -129,7 +129,7 @@ class TemplateEngine(ABC):
             except:
                 cls.logger.warning(f'Failed to init {template}')
 
-    def render_to(self, data: dict, path: MinioPath, options: RenderOptions) -> None:
+    def render_to(self, data: dict, path: MinioPath, options: RenderOptions):
         if not self.is_up():
             self.reconfigure()
 

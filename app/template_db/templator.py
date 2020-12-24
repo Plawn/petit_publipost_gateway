@@ -47,8 +47,8 @@ class Templator:
         available_engines: Dict[str, TemplateEngine],
         logger: logging.Logger
     ):
-        self.remote_template_bucket = minio_path.bucket
-        self.output_path = output_path
+        self.remote_template_bucket: str = minio_path.bucket
+        self.output_path: str = output_path
         self.templates: Dict[str, TemplateEngine] = {}
         self.minio_instance = minio_instance
         self.time_delta = time_delta
@@ -106,7 +106,8 @@ class Templator:
                 fails.append(filename)
 
         self.logger.info(
-            f'Initialisation finished for bucket "{self.remote_template_bucket}"')
+            f'Initialisation finished for bucket "{self.remote_template_bucket}"'
+        )
         return successes, fails
 
     def to_json(self) -> Dict[str, List[str]]:

@@ -34,6 +34,7 @@ class Model:
         self.fallback_action = MissingPlaceholderFallbackAction(
             FIELD_NAME_OPTION, self.replacer)
 
+        # TODO:
         # should use a better abstraction here
         # phoenix fields
         self.fields = utils.prepare_names((i[0] for i in strings_and_info))

@@ -6,3 +6,4 @@ tests
 *.env
 docker-compose.yaml
 docs
+.vscode
