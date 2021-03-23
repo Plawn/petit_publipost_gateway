@@ -146,7 +146,7 @@ class TemplateEngine(ABC):
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        res = requests.post(self.url + '/publipost', json=data)
+        res = requests.post(self.url + '/publipost', json=js)
         result = res.json()
         if 'error' in result:
             if result['error']:

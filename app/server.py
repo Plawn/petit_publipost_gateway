@@ -133,9 +133,9 @@ def publipost_document(body: PubliPostBody):
         }
     except EngineDown:
         return make_error('Engine down')
-    except:
+    except Exception as e:
         traceback.print_exc()
-        return make_error('Unknown error')
+        return make_error(f'Unknown error, {e}')
 
 
 @app.get('/live')
