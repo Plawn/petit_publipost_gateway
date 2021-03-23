@@ -6,12 +6,13 @@ it must be a yaml and include
 
 import traceback
 from typing import Any, Dict, Optional
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from .ressources import template_db
-from .template_db import ENSURE_KEYS, RenderOptions, from_strings_to_dict, template_engine, EngineDown
-
+from .template_db import (ENSURE_KEYS, EngineDown, RenderOptions,
+                          from_strings_to_dict, template_engine)
 
 default_options = RenderOptions(
     push_result=True,
