@@ -7,6 +7,19 @@ from .template_db import PREV_TOKEN, BaseReplacer, MultiReplacer
 TYPE_SYMBOL = 'type'
 
 
+def find_end(s: str) -> int:
+    i = 0
+    for i, char in enumerate(s):
+        if char == '_':
+            if i < len(s) - len(to_replace_end.doc_side) + 1:
+                if s[i+1] == '_' and s[i+2] == '.':
+                    return i
+            elif i < len(s) - len(to_replace_end.doc_side):
+                if s[s+1] == '_':
+                    return i
+    return i
+
+
 @dataclass
 class ReplacerData:
     doc_side: str
@@ -20,40 +33,52 @@ to_replace_context = ReplacerData('_', '#')
 
 
 class FuncReplacer(BaseReplacer):
-    def from_doc(self, text: str):
+    @staticmethod
+    def from_doc(text: str):
         """
         will transform __DDE__ -> ("DDE")
-        will transoform mission.getStudentDoc___student,REM__ -> mission.getStudentDoc(#student,"REM")
+        will transoform mission.getStudentDoc___student_REM__ -> mission.getStudentDoc(#student,"REM")
         """
+        # TODO: +1 and +2 should be explained
         if to_replace_begin.doc_side in text:
             i = text.index(to_replace_begin.doc_side)
-            params_string = text[i+2:-2]
+            end_of_func = i + 2 + find_end(text[i + 2:])
+            params_string = text[i + 2:end_of_func]
             params = params_string.split(to_replace_sep.doc_side)
+
             for j, value in enumerate(params):
                 if value == '':
-                    if params[j+1] == '':
-                        raise Exception(
-                            f'Invalid syntax while parsing: "{text}"'
-                        )
-                    params[j+1] = to_replace_context.other_side + params[j+1]
+                    if j+1 < len(params):
+                        if params[j+1] == '' and j != len(params) - 2:
+                            raise Exception(
+                                f'Invalid syntax while parsing: "{text}"'
+                            )
+                        if params[j+1] != '':
+                            params[j+1] = to_replace_context.other_side + \
+                                params[j+1]
             params = (i for i in params if i != "")
             params = (
                 f'"{i}"' if i[0] != to_replace_context.other_side else i for i in params
             )
 
-            return text[:i] + f'({to_replace_sep.other_side.join(params)})', {}
-        return text, {}
+            return (
+                text[:i] + f'({to_replace_sep.other_side.join(params)})' +
+                FuncReplacer.from_doc(text[end_of_func+2:])[0],
+                {}
+            )
+        return (text, {})
 
     @staticmethod
     def to_doc(text: str) -> str:
         if to_replace_begin.other_side in text:
-            return (text
-                    .replace(to_replace_begin.other_side, to_replace_begin.doc_side, 1)
-                    .replace(to_replace_end.other_side, to_replace_end.doc_side, 1)
-                    .replace(to_replace_context.other_side, to_replace_context.doc_side)
-                    .replace('"', '')
-                    .replace(to_replace_sep.other_side, to_replace_sep.doc_side)
-                    )
+            while '(' in text:
+                text = (text.replace(to_replace_begin.other_side, to_replace_begin.doc_side, 1)
+                        .replace(to_replace_end.other_side, to_replace_end.doc_side, 1)
+                        .replace(to_replace_context.other_side, to_replace_context.doc_side)
+                        .replace('"', '')
+                        .replace(to_replace_sep.other_side, to_replace_sep.doc_side)
+                        )
+            return text
         return text
 
 

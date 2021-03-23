@@ -61,7 +61,9 @@ def get_fields_document(templator_name: str, name: str):
     if templator is not None:
         # check if template name exists
         if name in templator.templates:
-            return templator.templates[name].get_fields()
+            res = template_db.templators[templator_name].templates[name].get_fields()
+            if res is None:
+                return make_error('Template contains error', 400)
         return make_error('Template not found', 404)
     else:
         return make_error('Templator not found', 404)

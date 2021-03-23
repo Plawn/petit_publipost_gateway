@@ -146,11 +146,11 @@ class TemplateEngine(ABC):
             'options': options.compile_options,
             'push_result': options.push_result,
         }
-        res = requests.post(self.url + '/publipost', json=js)
+        res = requests.post(self.url + '/publipost', json=data)
         result = res.json()
         if 'error' in result:
             if result['error']:
-                raise Exception('An error has occured')
+                raise Exception(f'An error has occured | {result["error"]}')
         return result
 
     def to_json(self) -> dict:
