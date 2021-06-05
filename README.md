@@ -1,4 +1,4 @@
-# API-DOC-2
+# Petit publiposter
 
 ## Docker Setup
 
