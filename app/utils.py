@@ -19,7 +19,8 @@ class Settings(BaseModel):
     manifest: Dict[str, ManifestEntry]
     engine_settings: Dict[str, Any]
     push_result_validity_time: timedelta = Field(
-        default_factory=lambda value: timedelta(seconds=value))
+        default_factory=lambda value: timedelta(seconds=value)
+    )
 
 
 @lru_cache()

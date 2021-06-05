@@ -16,13 +16,13 @@ services:
       - excel-engine
 
   word-engine:
-    image: registry.dev.juniorisep.com/phoenix/publiposting-services/word-publiposting:staging
+    image: <>
     expose: 
       - 5000
     restart: unless-stopped
 
   excel-engine:
-    image: registry.dev.juniorisep.com/phoenix/publiposting-services/excel-publiposting:staging
+    image: <>
     ports: 
       - 4000
     restart: unless-stopped

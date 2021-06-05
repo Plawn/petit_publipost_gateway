@@ -110,7 +110,7 @@ class ListReplacer(BaseReplacer):
         return text
 
 
-PHOENIX_NODE_TRANSFORMER = MultiReplacer([
+SPEL_TRANSFORMER = MultiReplacer([
     FuncReplacer()
 ])
 

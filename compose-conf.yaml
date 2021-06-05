@@ -17,4 +17,4 @@ manifest:
   new-templates:
     output_bucket: temporary
     # thats the name under which the document will be accessible
-    type: phoenix
+    type: example
