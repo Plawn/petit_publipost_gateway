@@ -1,10 +1,10 @@
-import re
-from dataclasses import dataclass
 from typing import Tuple
+from .BaseReplacer import BaseReplacer, ReplacerData
 
-from .template_db import PREV_TOKEN, BaseReplacer, MultiReplacer
-
-TYPE_SYMBOL = 'type'
+to_replace_begin = ReplacerData('__', '(')
+to_replace_end = ReplacerData('__', ')')
+to_replace_sep = ReplacerData('_', ',')
+to_replace_context = ReplacerData('_', '#')
 
 
 def find_end(s: str) -> int:
@@ -19,17 +19,6 @@ def find_end(s: str) -> int:
                     return i
     return i
 
-
-@dataclass
-class ReplacerData:
-    doc_side: str
-    other_side: str
-
-
-to_replace_begin = ReplacerData('__', '(')
-to_replace_end = ReplacerData('__', ')')
-to_replace_sep = ReplacerData('_', ',')
-to_replace_context = ReplacerData('_', '#')
 
 class FuncReplacer(BaseReplacer):
     @staticmethod
@@ -80,52 +69,3 @@ class FuncReplacer(BaseReplacer):
                         )
             return text
         return text
-
-# have to admit that, this is ugly
-
-
-class ListReplacer(BaseReplacer):
-    # I and T are used to delimit our stuff
-    regex = re.compile(r'II(.*)II')
-
-    def from_doc(self, text: str) -> str:
-        res = self.regex.findall(text)
-        if len(res) > 0:
-            pre_node = text.split('II')[-1].strip()
-            nodes = pre_node.split('.')
-            text = re.sub(self.regex, '.', text).replace(
-                '.'+pre_node, '').strip()
-            text = '.'.join([nodes[0], text, '.'.join(nodes[1:])])
-            infos = {
-                'type': {
-                    'list': res[0].split('T'),
-                },
-                PREV_TOKEN: True
-            }
-            return text, infos
-        return text, {}
-
-    def to_doc(self, text: str) -> str:
-        return text
-
-
-SPEL_TRANSFORMER = MultiReplacer([
-    FuncReplacer()
-])
-
-
-if __name__ == '__main__':
-    def test(test_string: str):
-        res = FuncReplacer.from_doc(test_string)[0]
-        print(res)
-
-        verify = FuncReplacer.to_doc(res)
-        print(verify)
-        print(verify == test_string)
-
-    test_strings = [
-        'mission.getStudentDoc___student_REM__',
-        'mission.getStudentDoc__REM__'
-    ]
-    for test_string in test_strings:
-        test(test_string)
