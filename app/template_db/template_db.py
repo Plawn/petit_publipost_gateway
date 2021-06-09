@@ -91,7 +91,7 @@ class TemplateDB:
                 templator.pull_templates()
 
     def use_default_connectors(self):
-        """Will bind the integrated docx, pptx and xlsx connector to this instance
+        """Will bind the integrated docx, pptx and xlsx, html connector to this instance
         """
         for engine in template_engines.values():
             self.add_connector(engine)
@@ -124,7 +124,9 @@ class TemplateDB:
         # reverse the way it's done
         for ext, env in self.engine_settings.items():
             if ext not in self.available_connectors:
-                self.logger.warning(f'No configuration for engine {ext}')
+                self.logger.warning(
+                    f'No configuration for engine {ext}, we have {list(self.available_connectors.keys())}'
+                )
                 continue
             engine = self.available_connectors[ext]
             ok, missing = engine.check_env(env)
@@ -140,7 +142,8 @@ class TemplateDB:
                     self.logger.error(e)
             else:
                 self.logger.error(
-                    f'Invalid env for handler "{ext}" | missing keys {missing}')
+                    f'Invalid env for handler "{ext}" | missing keys {missing}'
+                )
             available_engines[ext] = engine
         return available_engines
 

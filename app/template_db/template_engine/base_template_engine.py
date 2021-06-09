@@ -139,7 +139,7 @@ class TemplateEngine(ABC):
             'template_name': self.exposed_as,
             'r_template_name': self.pull_infos.remote.filename,
             # adding bucket for later use, make it more stateless
-            'bucket': self.pull_infos.remote.bucket,
+            'bucket_name': self.pull_infos.remote.bucket,
             # should send the hash of the current template version
             'output_bucket': path.bucket,
             'output_name': path.filename,
@@ -148,7 +148,7 @@ class TemplateEngine(ABC):
         }
         res = requests.post(self.url + '/publipost', json=js)
         result = res.json()
-        if 'error' in result:
+        if 'error' in result or not res.ok:
             if result['error']:
                 raise Exception(f'An error has occured | {result["error"]}')
         return result
