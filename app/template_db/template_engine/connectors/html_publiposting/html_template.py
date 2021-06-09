@@ -28,6 +28,7 @@ class HtmlTemplator(TemplateEngine):
     supported_extensions = {'html'}
 
     def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
+        # should better handle this
         HtmlTemplator.registered_templates.append(self)
         super().__init__(filename, pull_infos, replacer)
 

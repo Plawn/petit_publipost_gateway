@@ -71,6 +71,8 @@ def get_fields_document(templator_name: str, name: str):
             )
             if res is None:
                 return make_error('Template contains error', 400)
+            else:
+                return res
         return make_error('Template not found', 404)
     else:
         return make_error('Templator not found', 404)
