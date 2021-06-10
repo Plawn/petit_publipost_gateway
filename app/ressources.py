@@ -1,4 +1,4 @@
-from .spel_transformers import SPEL_TRANSFORMER
+from .spel_transformer import SPEL_TRANSFORMER
 from .template_db import TemplateDB
 from .utils import get_settings
 
