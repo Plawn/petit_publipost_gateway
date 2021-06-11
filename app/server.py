@@ -6,11 +6,11 @@ it must be a yaml and include
 """
 
 import traceback
-from typing import Any, Dict, Optional
+from typing import Dict
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 
+from .dto import PubliPostBody
 from .ressources import template_db
 from .template_db import (ENSURE_KEYS, EngineDown, RenderOptions,
                           from_strings_to_dict, template_engine)
@@ -24,6 +24,7 @@ default_options = RenderOptions(
 )
 
 app = FastAPI(
+    title="Publipost Gateway",
     on_startup=[
         lambda: template_db.init()
     ]
@@ -80,7 +81,8 @@ def get_fields_document(templator_name: str, name: str):
 
 @app.get('/reload/{templator_name}/{template_name}')
 def reload_document(templator_name: str, template_name: str):
-    """Will reload the specied templator in the case name `template_name` == 'all'
+    """
+    Will reload the specied templator in the case name `template_name` == 'all'
 
     else will reload the template_name from a given templator
     """
@@ -89,7 +91,9 @@ def reload_document(templator_name: str, template_name: str):
         if templator_name is not None:
             if template_name == 'all':
                 templator.pull_templates()
-                return {'error': False}
+                return {
+                    'error': False
+                }
             else:
                 # should be full name
                 # ex: DDE.docx
@@ -109,23 +113,6 @@ def reload_all_documents():
         return {'error': False}
     except:
         return make_error(traceback.format_exc(), 500)
-
-# TODO:
-# update in phoenix-api the name of the fields for a better comprehension
-
-
-class PubliPostBody(BaseModel):
-    # templator name
-    templator_name: str
-    # template_name
-    template_name: str
-
-    """output_filename in case of option.push_result = False"""
-    output_filename: str
-    """render options that will be passed to the template_db and engines"""
-    options: Optional[RenderOptions]
-    """the actual data to replace in the templates"""
-    data: Dict[str, Any]
 
 
 @app.post('/publipost')
