@@ -9,7 +9,7 @@ import minio
 from .data_objects import ManifestEntry, RenderOptions
 from .minio_creds import MinioCreds, MinioPath
 from .template_engine import TemplateEngine, template_engines
-from .template_engine.ReplacerMiddleware import MultiReplacer
+from .template_engine.ReplacerMiddleware import MultiAdaptater
 from .templator import Templator
 
 
@@ -37,7 +37,7 @@ class TemplateDB:
         engine_settings: Dict[str, Any],
         time_delta: timedelta,
         minio_creds: MinioCreds,
-        node_transformer: Optional[MultiReplacer] = None,
+        node_transformer: Optional[MultiAdaptater] = None,
         cache_validation_interval: float = -1,
         logger: Optional[logging.Logger] = None
     ):
@@ -47,7 +47,7 @@ class TemplateDB:
             f'TemplateDB_logger{id(self)}'
         )
         self.manifest: Dict[str, ManifestEntry] = manifest
-        self.replacer: MultiReplacer = node_transformer or MultiReplacer([])
+        self.replacer: MultiAdaptater = node_transformer or MultiAdaptater([])
         self.templators: Dict[str, Templator] = {}
         self.time_delta: timedelta = time_delta
         """Engine Name -> settings

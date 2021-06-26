@@ -7,7 +7,7 @@ from ..template_db import PREV_TOKEN, BaseReplacer
 # have to admit that, this is ugly
 
 
-class ListReplacer(BaseReplacer):
+class SpelListAdapter(BaseReplacer):
     # I and T are used to delimit our stuff
     regex = re.compile(r'II(.*)II')
 

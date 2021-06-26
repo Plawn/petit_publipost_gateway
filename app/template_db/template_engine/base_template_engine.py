@@ -14,7 +14,7 @@ import requests
 from ..minio_creds import MinioCreds, MinioPath, PullInformations
 from .auto_configurer import AutoConfigurer, FailedToConfigure
 from .model_handler import Model, SyntaxtKit
-from .ReplacerMiddleware import MultiReplacer
+from .ReplacerMiddleware import MultiAdaptater
 
 if TYPE_CHECKING:
     from ..data_objects import RenderOptions
@@ -42,11 +42,11 @@ class TemplateEngine(ABC):
     __conf: Optional[ConfigOptions] = None
     __auto_checker: Optional[AutoConfigurer] = None
 
-    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiReplacer):
+    def __init__(self, filename: str, pull_infos: PullInformations, replacer: MultiAdaptater):
         self.filename: str = filename
         self.model: Optional[Model] = None
         self.pull_infos: PullInformations = pull_infos
-        self.replacer: MultiReplacer = replacer
+        self.replacer: MultiAdaptater = replacer
         self.pulled_at: int = NEVER_PULLED
 
         """To ensure that we don't have name collision when using it with multiple buckets

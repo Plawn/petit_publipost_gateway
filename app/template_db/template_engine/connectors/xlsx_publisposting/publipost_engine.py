@@ -4,7 +4,7 @@ from typing import List, Optional
 from ....minio_creds import PullInformations
 from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
-from ...ReplacerMiddleware import MultiReplacer
+from ...ReplacerMiddleware import MultiAdaptater
 
 EXT = '.xlsx'
 
@@ -26,7 +26,7 @@ class XlsxTemplator(TemplateEngine):
 
     supported_extensions = {'xlsx'}
 
-    def __init__(self, filename: str,  pull_infos: PullInformations, replacer: MultiReplacer):
+    def __init__(self, filename: str,  pull_infos: PullInformations, replacer: MultiAdaptater):
         super().__init__(filename, pull_infos, replacer)
         XlsxTemplator.registered_templates.append(self)
 

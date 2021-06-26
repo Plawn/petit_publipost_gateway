@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from .BaseReplacer import BaseReplacer
 
-class MultiReplacer:
+class MultiAdaptater:
     def __init__(self, replacers: List[BaseReplacer]):
         self.replacers = replacers
 

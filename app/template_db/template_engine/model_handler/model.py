@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, List, Tuple
 
 from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
-from ..ReplacerMiddleware import MultiReplacer
+from ..ReplacerMiddleware import MultiAdaptater
 from . import utils
 from .utils import MissingPlaceholderFallbackAction
 
@@ -27,7 +27,7 @@ class Model:
     """To safely replace with jinja2 template
     """
 
-    def __init__(self, strings_and_info: StringAndInfos, replacer: MultiReplacer, syntax_kit: SyntaxtKit):
+    def __init__(self, strings_and_info: StringAndInfos, replacer: MultiAdaptater, syntax_kit: SyntaxtKit):
         self.syntax: SyntaxtKit = syntax_kit
         self.structure: dict = None
         self.replacer = replacer
@@ -40,7 +40,7 @@ class Model:
         self.fields = utils.prepare_names((i[0] for i in strings_and_info))
         self.load(strings_and_info, self.replacer)
 
-    def load(self, strings_and_info: StringAndInfos, replacer: MultiReplacer):
+    def load(self, strings_and_info: StringAndInfos, replacer: MultiAdaptater):
         """
         Makes a model for a given list of string like :
 

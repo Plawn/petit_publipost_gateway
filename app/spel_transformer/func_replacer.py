@@ -18,7 +18,7 @@ def find_end(s: str) -> int:
     return i
 
 
-class FuncReplacer(BaseReplacer):
+class SpelFuncAdapter(BaseReplacer):
     @staticmethod
     def from_doc(text: str) -> Tuple[str, dict]:
         """
@@ -50,7 +50,7 @@ class FuncReplacer(BaseReplacer):
 
             return (
                 text[:i] + f'({to_replace_sep.other_side.join(params)})' +
-                FuncReplacer.from_doc(text[end_of_func + 2:])[0],
+                SpelFuncAdapter.from_doc(text[end_of_func + 2:])[0],
                 {}
             )
         return (text, {})

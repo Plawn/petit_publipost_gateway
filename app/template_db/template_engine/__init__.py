@@ -7,7 +7,7 @@ from .connectors import (DocxTemplator, HtmlTemplator, PptxTemplator,
                          XlsxTemplator)
 from .constants import PREV_TOKEN
 from .model_handler import from_strings_to_dict
-from .ReplacerMiddleware import BaseReplacer, MultiReplacer
+from .ReplacerMiddleware import BaseReplacer, MultiAdaptater
 
 DOCX = 'docx'
 XLSX = 'xlsx'

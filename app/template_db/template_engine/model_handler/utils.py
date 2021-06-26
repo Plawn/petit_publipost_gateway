@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any, Dict, Iterable, List, Set, Tuple, Callable
 
-from ..ReplacerMiddleware import MultiReplacer
+from ..ReplacerMiddleware import MultiAdaptater
 
 
 class FallbackAction(ABC):
-    def __init__(self, field_name: str, replacer: MultiReplacer):
+    def __init__(self, field_name: str, replacer: MultiAdaptater):
         self.field_name = field_name
         self.replacer = replacer
 

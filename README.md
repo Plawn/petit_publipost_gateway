@@ -7,96 +7,79 @@ PLS mount the conf file into /api/conf.yaml
 ## Installation
 
 ```sh
-$ pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-* Installer le moteur word-publiposting
-* Installer le moteur excel-publiposting
+Install the wanted engines
 
-
-## Utiliser en local 
-
-### Sans docker
-
-* Start the word-publiposting with the correct port (same as the one in `conf.yaml`)
-* Start the excel-publiposting with the correct port (same as the one in `conf.yaml`)
-
-Il vous faut un fichier de configuration valide
+## How to start
 
 ```sh
-$ ./start_dev.sh
+./start_dev.sh
 ```
 
-Les moteurs doivent être lancer avant api-doc2 puisque api-doc2 va les configurer au démarrage
+Start the wanted engines
 
 ### Avec docker
 
 ```sh
-$ docker-compose up
+docker-compose up
 ```
 
 Il vous faut un fichier de configuration valide qui sera monté dans le volume docker
 
 ## Configuration
 
-La configuration est assez simple et se déroule dans le fichier `conf.yaml`
-
-- Il suffit de mettre les variables permettant de se connecter à l'instance minio sur laquelle l'api va opérer
-- Il faut ensuite mettre sous la clef **manifest** les informations des différents bucket à exposer
-  - Les clefs de ce mapping seront le nom des buckets à exposer
-    - output_bucket : le nom du bucket de sortie
-    - tyoe : le nom sous lequel les documents seront exposés
-- renseigner où se trouvent les moteurs en fonction de leurs noms
+The configuration is supposed to be in the `conf.yaml` file
 
 ```yaml
-MINIO_HOST: ""
-MINIO_KEY: ""
-MINIO_PASS: ""
-SECURE: true
+# should be imported from the minio creds conf file
+
+s3:
+  host: <>
+  accessKey: <>
+  passKey: <>
+  secure: true
+
+cache_validation_interval: 60 # cache will be validated every minute
+
+push_result_validity_time: 86400 #seconds, it's a day
 
 engine_settings:
-  docx: 
-    host: word-engine:5000
+  docx:
+    host: localhost:3002
     secure: false
   xlsx:
-    host: excel-engine:4000
+    host: localhost:3001
+    secure: false
+  pptx:
+    host: localhost:3003
     secure: false
 
 manifest:
   new-templates:
-    output_bucket: temporary # for testing purposes it's better :) 
+    output_bucket: temporary
     # thats the name under which the document will be accessible
-    type: phoenix
+    export_name: example
+
 ```
 
-#### Ne pas oublier de mettre des templates dans le bucket indiqué dans votre fichier de configuration
+Note: **Don't forget to put the template in the correct bucket**
 
 ## Summary
 
-Pourquoi api-doc2 ?
+This gateway is a part of the petite stack and is meant to be used with the petit_engines in order to publipost document. It uses publipost engines accross the network in order to make it simpler to add new engines later. It does pattern transformation for all the engines and maps the template depending on their extension. In order to use a given engine you have to use a connector and the corresponding engine.
+In order to be flexible and modular the the templates can be placed on an S3 provider. As of now, the result of the publiposting operation is sent to the S3 service in order to avoid unecessary network usage.
 
-api-doc l'ancienne api de publipostage de phoenix permettait de publiposter des documents word mais était limité dans ce qu'elle pouvait faire. On ne pouvait publiposter qu'un seul type de valeurs, des missions.
+## Endpoints
 
-De plus l'api ne supportait pas le caching ce qui baissait ses performances.
+### Publipost
 
-## Qu'est ce que c'est ?
-
-api-doc2 c'est une gateway qui permet à phoenix-api de publiposter n'importe quel type de document sans avoir à faire de différence.
-
-api-doc2 utilise donc des moteurs de rendu accessible sur le reseau
-
-Ces moteurs sont donc disponibles au moyen de requêtes HTTP et il est ainsi très simple d'ajouter un nouveau moteur pour support un nouveau type de document.
-
-Les moteurs vont directement tapper dans minio pour pull les templates et pousser les résultats des rendus.
-
-## Les endpoints
-
-### Pour publiposter
-
-On poste sur : '/publipost'
+POST: /publipost
 
 Example
 
+<!-- TODO fix -->
 ```json
  {
     "data":  {
@@ -113,30 +96,28 @@ Example
     "type": "phoenix"
 }
 ```
-#### `data` 
 
-Sous cette clef on va mettre les données à publiposter.
-Pour publiposter les données sur l'objet mission, il faut ainsi les mettre sous la clef mission.
+#### `data`
+
+The data to publipost
 
 #### `template_name`
 
 Self explenatory ?
 
-#### `type` 
+#### `type`
 
 We will have multiple document repositories from now on, ex: (tresorerie, ...etc)
 
-#### `filename` 
+#### `filename`
 
 That's the desired filename save, that's the previous `generated_name`
 
+### Get placeholders
 
+On fait un get sur "/document/{bucketName}/{templateName}"
 
-### Pour get les placeholders
-
-On fait un get sur "/document/#nom-du-bucket/#nom-template"
-
-ça renvoie donc : 
+ça renvoie donc :
 
 ```json
 {
@@ -152,61 +133,38 @@ On fait un get sur "/document/#nom-du-bucket/#nom-template"
         "firstName",
         "zipCode",
         "lastName"
-    ],
-    "this": [
-        "reference"
     ]
 }
 ```
 
 ### healtcheck
 
-Sur /live ça renvoie toujours une 200 avec un body 'OK'
+GET /live
 
-Cela permet aux autres services qu'api-doc2 est live
+## Adding a new engine
 
+Use either the [petit_nodejs_publipost_connector](https://github.com/Plawn/petit_nodejs_publipost_connector) for nodejs or the [petit_python_publipost_connector](https://github.com/Plawn/petit_python_publipost_connector) for python, and implement the template interface. Then create a connector using, makeConnector or make_connector.
 
-## Comment ajouter un moteur
+This engines are available today:
 
+- [petit_docx_engine](https://github.com/Plawn/petit_docx_engine)   (python)
+- [petit_xlsx_engine](https://github.com/Plawn/petit_xlsx_engine)   (nodejs)
+- [petit_pptx_engine](https://github.com/Plawn/petit_pptx_engine)   (nodejs)
+- [petit_html_engine](https://github.com/Plawn/petit_html_engine)   (python)
+- [petit_pdf_engine](https://github.com/Plawn/petit_pdf_engine)     (nodejs)
 
-Pour ajouter un nouveau moteur il suffit donc de l'ajouter dans le dictionnaire de handlers et d'écrire un handler.
+## Options
 
-Pour écrire un handler il suffit donc d'implemnter l'interface de base et d'ajouter la configuration dans le fichier de configuration.
+### Force reaload cache
 
+Hit the /reload endpoint
 
-## Gestion du cache
+## Transformers
 
+If you want to transform the keys or the values of the placeholders you can implement transformers in the connector for local transformation or in the adaptater for global adapatation.
 
-Comme indiqué plus haut, on a maintenant du cache, ça permet de gagner du temps sur chaque query et ça évite de la charge réseau par la même occasion.
+Today the supplied adaptater is the sPel adapter. It's meant to be used with the spel expression parser of the Spring framework.
 
-Il faut donc gérer le reload du cache. ça se fait avec l'endpoint "/reload"
+## Architecture
 
-
-## Flow général
-
-- Démarrage des moteurs
-- Démarrage de la gateway
-    - lecture de la configuration
-    - configuration des moteurs
-    - initialisation d'un groupe de template par bucket
-    - détection des templates 
-    - configuration des interfaces de templates sur chacun des moteurs en fonction de l'extension du template
-        - pull les templates par chacun des engine (excel, word)
-        - parsing des templates sur chacun des engine
-        - envoie vers la gateway des models et construction des fonctions de fallback et de remplacement sur la gateway
-    
-            // ici la gateway mets donc en cache dans chaque interface de templating les models de donnée en cache. Cela permet de ne pas query les moteurs à chaque fois que l'on veut les placeholder sur la gateway
-
-- db_loaded = True
-// à partir d'ici le système de publipostage est utilisable.
-- en faisant des queries sur /document on peut avoir les placeholder
-- en faisant des queries sur /publipost on peut publiposter des docs
-
-![](./docs/images/main.svg)
-
-
-## Pistes d'améliorations :
-
-- [x] Changer la façon dont sont register les engines
-- [x] Mettre à jour automatiquement le cache
-- [x] Ajouter un moteur de PPT
+![architecture](./docs/images/main.svg)
