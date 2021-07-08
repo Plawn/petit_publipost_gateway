@@ -2,7 +2,7 @@ version : '3'
 
 services:
   api-doc2:
-    # image: registry.dev.juniorisep.com/phoenix/api-doc2:staging
+    # image: <>
     build: .
     environment: 
       - CONF_FILE=conf.yaml
