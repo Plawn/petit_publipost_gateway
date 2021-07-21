@@ -2,8 +2,8 @@ import copy
 import json
 from typing import Any, Dict, List, Tuple
 
-from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
 from ..adapter_middleware import MultiAdapter
+from ..constants import FIELD_NAME_OPTION, INFO_FIELD_NAME, PREV_TOKEN
 from . import utils
 from .utils import MissingPlaceholderFallbackAction
 
@@ -36,7 +36,6 @@ class Model:
 
         # TODO:
         # should use a better abstraction here
-        # phoenix fields
         self.fields = utils.prepare_names((i[0] for i in strings_and_info))
         self.load(strings_and_info, self.replacer)
 

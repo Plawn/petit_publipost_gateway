@@ -1,12 +1,14 @@
 import logging
 import threading
 import traceback
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Set, Type
-from dataclasses import dataclass
+
 import minio
 
 from .data_objects import ManifestEntry, RenderOptions
+from .file_provider import BaseFileProvider
 from .minio_creds import MinioCreds, MinioPath
 from .template_engine import TemplateEngine, template_engines
 from .template_engine.adapter_middleware import MultiAdapter
@@ -36,18 +38,17 @@ class TemplateDB:
         manifest: Dict[str, ManifestEntry],
         engine_settings: Dict[str, Any],
         time_delta: timedelta,
-        minio_creds: MinioCreds,
+        file_provider: BaseFileProvider,
         node_transformer: Optional[MultiAdapter] = None,
         cache_validation_interval: float = -1,
         logger: Optional[logging.Logger] = None
     ):
-        self.minio_creds: MinioCreds = minio_creds
-        self.minio_instance = self.minio_creds.as_client()
+        self.file_provider: BaseFileProvider = file_provider
         self.logger = logger or logging.getLogger(
             f'TemplateDB_logger{id(self)}'
         )
         self.manifest: Dict[str, ManifestEntry] = manifest
-        self.replacer: MultiAdapter = node_transformer or MultiAdapter([])
+        self.adapter: MultiAdapter = node_transformer or MultiAdapter([])
         self.templators: Dict[str, Templator] = {}
         self.time_delta: timedelta = time_delta
         """Engine Name -> settings
@@ -151,18 +152,19 @@ class TemplateDB:
         for bucket_name, settings in self.manifest.items():
             try:
                 self.templators[settings.export_name] = Templator(
-                    self.minio_instance,
+                    self.file_provider,
                     MinioPath(bucket_name),
                     MinioPath(settings.output_bucket),
                     self.time_delta,
-                    self.replacer,
+                    self.adapter,
                     self.engine_settings,
                     self.engines,
                     self.logger
                 )
             except Exception as e:
                 self.logger.error(
-                    f'Failed to initialize {bucket_name} templator')
+                    f'Failed to initialize {bucket_name} templator | {e}'
+                )
                 traceback.print_exc()
 
     def to_json(self):
