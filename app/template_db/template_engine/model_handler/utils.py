@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any, Dict, Iterable, List, Set, Tuple, Callable
 
-from ..ReplacerMiddleware import MultiAdaptater
+from ..adapter_middleware import MultiAdapter
 
 
 class FallbackAction(ABC):
-    def __init__(self, field_name: str, replacer: MultiAdaptater):
+    def __init__(self, field_name: str, replacer: MultiAdapter):
         self.field_name = field_name
         self.replacer = replacer
 
@@ -15,7 +15,6 @@ class FallbackAction(ABC):
         pass
 
 
-# ugly name i know
 class MissingPlaceholderFallbackAction(FallbackAction):
     def prepare_fallback(self, _dict: dict, key: str) -> None:
         """
@@ -89,8 +88,6 @@ def prepare_names(strings: Iterable[str]) -> Dict[str, List[str]]:
 def from_strings_to_dict(data: Dict[str, Any]):
     """
     Makes a model for a given list of string like :
-
-    Used for the current version of phoenix-api 
 
     "mission.document.name": "test" => {
         mission: {

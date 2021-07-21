@@ -4,7 +4,7 @@ from typing import List, Optional
 from ....minio_creds import PullInformations
 from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
-from ...ReplacerMiddleware import MultiAdaptater
+from ...adapter_middleware import MultiAdapter
 
 SYNTAX_KIT = SyntaxtKit('{{', '}}')
 
@@ -27,7 +27,7 @@ class DocxTemplator(TemplateEngine):
     requires_env = []
     supported_extensions = {'docx'}
 
-    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiAdaptater):
+    def __init__(self, filename:str, pull_infos: PullInformations, replacer: MultiAdapter):
         DocxTemplator.registered_templates.append(self)
         super().__init__(filename, pull_infos, replacer)
 

@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from ..template_db import BaseReplacer
+from ..template_db import BaseAdapter
 from .data import (to_replace_begin, to_replace_context, to_replace_end,
                    to_replace_sep)
 
@@ -18,9 +18,8 @@ def find_end(s: str) -> int:
     return i
 
 
-class SpelFuncAdapter(BaseReplacer):
-    @staticmethod
-    def from_doc(text: str) -> Tuple[str, dict]:
+class SpelFuncAdapter(BaseAdapter):
+    def from_doc(self, text: str) -> Tuple[str, dict]:
         """
         will transform __DDE__ -> ("DDE")
         will transform mission.getStudentDoc___student_REM__ -> mission.getStudentDoc(#student,"REM")
@@ -50,13 +49,12 @@ class SpelFuncAdapter(BaseReplacer):
 
             return (
                 text[:i] + f'({to_replace_sep.other_side.join(params)})' +
-                SpelFuncAdapter.from_doc(text[end_of_func + 2:])[0],
+                self.from_doc(text[end_of_func + 2:])[0],
                 {}
             )
         return (text, {})
 
-    @staticmethod
-    def to_doc(text: str) -> str:
+    def to_doc(self, text: str) -> str:
         if to_replace_begin.other_side in text:
             while '(' in text:
                 text = (text.replace(to_replace_begin.other_side, to_replace_begin.doc_side, 1)

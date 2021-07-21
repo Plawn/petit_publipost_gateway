@@ -1,13 +1,13 @@
 import re
 
-from ..template_db import PREV_TOKEN, BaseReplacer
+from ..template_db import PREV_TOKEN, BaseAdapter
 
 
 
 # have to admit that, this is ugly
 
 
-class SpelListAdapter(BaseReplacer):
+class SpelListAdapter(BaseAdapter):
     # I and T are used to delimit our stuff
     regex = re.compile(r'II(.*)II')
 

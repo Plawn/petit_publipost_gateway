@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 
 
-class BaseReplacer(ABC):
+class BaseAdapter(ABC):
     @abstractmethod
     def from_doc(self, text: str) -> Tuple[str, dict]:
         ...

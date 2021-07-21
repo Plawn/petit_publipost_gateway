@@ -1,9 +1,9 @@
-from ..template_db import MultiAdaptater
+from ..template_db import MultiAdapter
 from .func_replacer import SpelFuncAdapter
 from .list_replacer import SpelListAdapter
 
-__all__ = ['ListReplacer', 'FuncReplacer']
+__all__ = ['SpelFuncAdapter', 'SpelListAdapter']
 
-SPEL_TRANSFORMER = MultiAdaptater([
+SPEL_TRANSFORMER = MultiAdapter([
     SpelFuncAdapter()
 ])

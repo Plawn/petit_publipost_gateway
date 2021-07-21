@@ -1,8 +1,8 @@
 from typing import List, Tuple
-from .BaseReplacer import BaseReplacer
+from .base_adapter import BaseAdapter
 
-class MultiAdaptater:
-    def __init__(self, replacers: List[BaseReplacer]):
+class MultiAdapter:
+    def __init__(self, replacers: List[BaseAdapter]):
         self.replacers = replacers
 
     def from_doc(self, text: str) -> Tuple[str, dict]:

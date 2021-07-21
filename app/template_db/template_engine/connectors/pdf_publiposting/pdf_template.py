@@ -6,7 +6,7 @@ from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
 from ...adapter_middleware import MultiAdapter
 
-EXT = '.xlsx'
+EXT = '.pdf'
 
 SYNTAX_KIT = SyntaxtKit('{{', '}}')
 
@@ -17,7 +17,7 @@ class Settings:
     secure: bool
 
 
-class XlsxTemplator(TemplateEngine):
+class PDFTemplator(TemplateEngine):
 
     requires_env = (
         'host',
@@ -28,7 +28,7 @@ class XlsxTemplator(TemplateEngine):
 
     def __init__(self, filename: str,  pull_infos: PullInformations, replacer: MultiAdapter):
         super().__init__(filename, pull_infos, replacer)
-        XlsxTemplator.registered_templates.append(self)
+        PDFTemplator.registered_templates.append(self)
 
     def _load_fields(self, fields: Optional[List[str]] = None) -> None:
         if fields is None:

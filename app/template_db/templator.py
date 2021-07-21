@@ -11,7 +11,7 @@ import minio
 from .minio_creds import MinioPath, PullInformations
 from .template_engine import NEVER_PULLED, TemplateEngine, template_engines
 from .template_engine.model_handler.utils import change_keys
-from .template_engine.ReplacerMiddleware import MultiAdaptater
+from .template_engine.adapter_middleware import MultiAdapter
 
 if TYPE_CHECKING:
     from .data_objects import RenderOptions
@@ -42,7 +42,7 @@ class Templator:
         minio_path: MinioPath,
         output_path: MinioPath,
         time_delta: datetime.timedelta,
-        replacer: MultiAdaptater,
+        replacer: MultiAdapter,
         engine_settings: dict,
         available_engines: Dict[str, TemplateEngine],
         logger: logging.Logger
