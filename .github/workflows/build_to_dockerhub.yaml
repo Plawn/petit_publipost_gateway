@@ -27,4 +27,4 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: plawn/petit_geocoder:latest
+          tags: plawn/petit_publipost_gateway:latest
