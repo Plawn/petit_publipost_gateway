@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from ....minio_creds import PullInformations
+from .....template_db.file_provider import PullInformations
 from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
 from ...adapter_middleware import MultiAdapter

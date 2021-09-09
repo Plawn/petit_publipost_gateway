@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-from ....minio_creds import PullInformations
+from .....template_db.file_provider import PullInformations
+from ...adapter_middleware import MultiAdapter
 from ...base_template_engine import TemplateEngine
 from ...model_handler import Model, SyntaxtKit
-from ...adapter_middleware import MultiAdapter
 
 SYNTAX_KIT = SyntaxtKit('{{', '}}')
 

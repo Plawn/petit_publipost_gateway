@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
 import requests
 
-from ..minio_creds import MinioCreds, MinioPath, PullInformations
+from ..file_provider import Path, PullInformations
+from .adapter_middleware import MultiAdapter
 from .auto_configurer import AutoConfigurer, FailedToConfigure
 from .model_handler import Model, SyntaxtKit
-from .adapter_middleware import MultiAdapter
 
 if TYPE_CHECKING:
     from ..data_objects import RenderOptions
@@ -49,19 +49,10 @@ class TemplateEngine(ABC):
         self.replacer: MultiAdapter = replacer
         self.pulled_at: int = NEVER_PULLED
 
-        """To ensure that we don't have name collision when using it with multiple buckets
-        """
-        self.exposed_as: str = self.get_exposed_as()
-
         self.performing_init: bool = False
         """Lock to handle, threaded context
         """
         self.__init_lock = threading.Lock()
-
-    def get_exposed_as(self):
-        """To ensure that we don't have name collision when using it with multiple buckets
-        """
-        return f'{self.pull_infos.remote.bucket}/{self.pull_infos.remote.filename}'
 
     @classmethod
     def check_env(cls, env: dict) -> bool:
@@ -107,13 +98,8 @@ class TemplateEngine(ABC):
 
     @classmethod
     def _configure(cls) -> None:
-        creds: MinioCreds = cls.__conf.minio
-        data = {
-            'host': creds.host,
-            'access_key': creds.accessKey,
-            'pass_key': creds.passKey,
-            'secure': creds.secure,
-        }
+        creds = cls.__conf.minio
+        data = creds.configure_body()
         try:
             res = requests.post(cls.url + '/configure', json=data)
             if res.status_code >= 300:
@@ -129,28 +115,22 @@ class TemplateEngine(ABC):
             except:
                 cls.logger.warning(f'Failed to init {template}')
 
-    def render_to(self, data: dict, path: MinioPath, options: RenderOptions):
+    def render_to(self, data: dict, path: Path, options: RenderOptions):
         if not self.is_up():
             self.reconfigure()
 
         # should make a dataclass here
         js = {
             'data': data,
-            'template_name': self.exposed_as,
-            'r_template_name': self.pull_infos.remote.filename,
-            # adding bucket for later use, make it more stateless
-            'bucket_name': self.pull_infos.remote.bucket,
-            # should send the hash of the current template version
-            'output_bucket': path.bucket,
-            'output_name': path.filename,
             'options': options.compile_options,
             'push_result': options.push_result,
+            'input': self.pull_infos.remote.value,
+            'output': path.value,
         }
         res = requests.post(self.url + '/publipost', json=js)
         result = res.json()
         if 'error' in result or not res.ok:
-            if result['error']:
-                raise Exception(f'An error has occured | {result["error"]}')
+            raise Exception(f'An error has occured | {result["error"]}')
         return result
 
     def to_json(self) -> dict:
@@ -198,14 +178,12 @@ class TemplateEngine(ABC):
                     res = requests.post(
                         self.url + '/load_templates',
                         json=[{
-                            'bucket_name': self.pull_infos.remote.bucket,
-                            'template_name': self.pull_infos.remote.filename,
-                            'exposed_as': self.exposed_as
+                            'path': self.pull_infos.remote.value,
                         }])
                     result = res.json()
                     successes = result['success']
                     if len(result['success']) < 1:
-                        raise Exception(f'Failed to import {self.exposed_as}')
+                        raise Exception(f'Failed to import {self.pull_infos.remote.value}')
                     # we know there is only one to setup here
                     fields = successes[0]['fields']
                     self._load_fields(fields)
@@ -217,15 +195,15 @@ class TemplateEngine(ABC):
         else:
             with self.__init_lock:
                 if not self.is_up():
-                    raise Exception(f'Failed to init {self.exposed_as}')
+                    raise Exception(f'Failed to init {self.pull_infos.remote.value}')
 
     def _get_placeholders(self) -> List[str]:
         res = requests.post(
             self.url + '/get_placeholders',
-            json={'name': self.exposed_as}
+            json={'name': self.pull_infos.remote.value}
         )
         result = res.json()
         if res.status_code >= 400:
             raise Exception(
-                f'failed to get placeholders for {self.exposed_as}')
+                f'failed to get placeholders for {self.pull_infos.remote.value}')
         return result

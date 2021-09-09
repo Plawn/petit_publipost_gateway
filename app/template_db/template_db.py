@@ -5,28 +5,17 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Set, Type
 
-import minio
-
 from .data_objects import ManifestEntry, RenderOptions
-from .file_provider import BaseFileProvider
-from .minio_creds import MinioCreds, MinioPath
+from .file_provider import FileProvider
 from .template_engine import TemplateEngine, template_engines
 from .template_engine.adapter_middleware import MultiAdapter
 from .templator import Templator
 
 
-def check_minio_instance(minio_instance: minio.Minio) -> bool:
-    try:
-        _ = minio_instance.list_buckets()
-        return True
-    except:
-        return False
-
-
 @dataclass
 class ConfigOptions:
     env: dict
-    minio: MinioCreds
+    minio: FileProvider
 
 
 class TemplateDB:
@@ -38,12 +27,12 @@ class TemplateDB:
         manifest: Dict[str, ManifestEntry],
         engine_settings: Dict[str, Any],
         time_delta: timedelta,
-        file_provider: BaseFileProvider,
+        file_provider: FileProvider,
         node_transformer: Optional[MultiAdapter] = None,
         cache_validation_interval: float = -1,
         logger: Optional[logging.Logger] = None
     ):
-        self.file_provider: BaseFileProvider = file_provider
+        self.file_provider: FileProvider = file_provider
         self.logger = logger or logging.getLogger(
             f'TemplateDB_logger{id(self)}'
         )

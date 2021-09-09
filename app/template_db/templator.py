@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.template_db.file_provider.interface import FileProvider, Path
 
 import datetime
 import logging
@@ -6,9 +7,6 @@ import os
 from typing import (TYPE_CHECKING, Any, Dict, Generator,
                     List, Literal, Tuple, Type)
 
-import minio
-
-from .minio_creds import MinioPath, PullInformations
 from .template_engine import NEVER_PULLED, TemplateEngine, template_engines
 from .template_engine.model_handler.utils import change_keys
 from .template_engine.adapter_middleware import MultiAdapter
@@ -21,7 +19,7 @@ ENSURE_KEYS = 'ensure_keys'
 CompileOptions = Literal['ensure_keys']
 
 
-def from_filename(filename: str) -> Tuple[str, str]:
+def ext_from_filename(filename: str) -> Tuple[str, str]:
     *name, ext = filename.split('.')
     return '.'.join(name), ext
 
@@ -38,22 +36,23 @@ class Templator:
 
     def __init__(
         self,
-        minio_instance: minio.Minio,
-        minio_path: MinioPath,
-        output_path: MinioPath,
+        file_provider: FileProvider,
+        base_path: Path,
+        output_path: Path,
         time_delta: datetime.timedelta,
         replacer: MultiAdapter,
         engine_settings: dict,
         available_engines: Dict[str, TemplateEngine],
         logger: logging.Logger
     ):
-        self.remote_template_bucket: str = minio_path.bucket
+        self.remote_template_bucket: str = base_path.bucket
         self.output_path: str = output_path
         self.templates: Dict[str, TemplateEngine] = {}
-        self.minio_instance = minio_instance
+        self.file_provider = file_provider
         self.time_delta = time_delta
         self.replacer = replacer
         self.engine_settings = engine_settings
+        # TODO: handle this
         self.verbose: bool = True
         self.available_engines: Dict[str,
                                      Type[TemplateEngine]] = available_engines
@@ -63,10 +62,10 @@ class Templator:
         """Downloading and caching one template from Minio
         """
         try:
-            name, ext = from_filename(filename)
+            name, ext = ext_from_filename(filename)
             pull_infos = PullInformations(
-                MinioPath(self.remote_template_bucket, filename),
-                self.minio_instance
+                Path(self.remote_template_bucket, filename),
+                self.file_provider
             )
             if ext in self.available_engines:
                 engine = self.available_engines[ext]
@@ -154,21 +153,19 @@ class Templator:
     def handle_cache(self):
         """this methods checks the bucket for template updates or new templates
         """
-        modified_at = (
-            (obj.object_name, obj.last_modified.timestamp())
-            for obj in self.minio_instance.list_objects(self.remote_template_bucket)
-        )
+
         # TODO: should cache this after
         loaded_filenames: Dict[str, TemplateEngine] = {
             template.filename: template for template in self.templates.values()
         }
         to_reload: List[TemplateEngine] = []
         to_load: List[str] = []
-        for filename, _modified_at in modified_at:
+        for file_ in self.file_provider.list_files(self.remote_template_bucket):
+            filename =   file_.path.value
             if filename in loaded_filenames:
                 pulled_at = loaded_filenames[filename].pulled_at
                 # -1 means that we never pulled the file before
-                if pulled_at < _modified_at:
+                if pulled_at < file_.last_modified_at:
                     self.logger.info(f'Scheduled "{filename}" for reload')
                     to_reload.append(loaded_filenames[filename])
             else:

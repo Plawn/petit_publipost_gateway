@@ -11,20 +11,20 @@ services:
     volumes: 
       - ./compose-conf.yaml:/api/conf.yaml
     restart: unless-stopped
-    depends_on:
-      - word-engine
-      - excel-engine
+    # depends_on:
+    #   - word-engine
+    #   - excel-engine
 
-  word-engine:
-    image: <>
-    expose: 
-      - 5000
-    restart: unless-stopped
+  # word-engine:
+  #   image: <>
+  #   expose: 
+  #     - 5000
+  #   restart: unless-stopped
 
-  excel-engine:
-    image: <>
-    ports: 
-      - 4000
-    restart: unless-stopped
+  # excel-engine:
+  #   image: <>
+  #   ports: 
+  #     - 4000
+  #   restart: unless-stopped
 
   
