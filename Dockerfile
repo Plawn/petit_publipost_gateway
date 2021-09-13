@@ -8,6 +8,8 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
+ENV CONF_FILE=conf.yaml
+
 EXPOSE 5000
 
-ENTRYPOINT ["CONF_FILE=conf.yaml", "uvicorn", "app.server:app", "--port", "5000"]
+ENTRYPOINT ["uvicorn", "app.server:app", "--port", "5000"]
